@@ -12,7 +12,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
-    "@prisma/client": "^6.9.0",
+    "@prisma/client": "6.9.0",
     "next": "^15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -21,6 +21,7 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "picocolors": "^1.1.1",
     "prisma": "^6.9.0",
     "typescript": "^5.8.3"
   }

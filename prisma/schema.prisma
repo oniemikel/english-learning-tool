@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ReviewRating {
+  AGAIN
+  HARD
+  GOOD
+  EASY
+}
+enum FSRSStateType {
+  NEW
+  LEARNING
+  REVIEW
+  RELEARNING
+}
+enum ReviewMode {
+  NORMAL
+  RANDOM
+  CUSTOM
+}
+enum SyncStatus {
+  PENDING
+  SYNCED
+  CONFLICT
+}
+enum Language {
+  JA
+  EN
+}
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+model User {
+  id           String @id @db.Char(36)
+  email        String @unique @db.VarChar(255)
+  passwordHash String @db.VarChar(255)
+  displayName  String @db.VarChar(100)
+  avatarUrl    String? @db.VarChar(500)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+  setting      UserSetting?
+  decks        Deck[]
+  reviewLogs   ReviewLog[]
+  statistics   DailyStatistic[]
+  @@map("User")
+}
+
+model UserSetting {
+  id             String @id @db.Char(36)
+  userId         String @unique @db.Char(36)
+  dailyNewCards  Int @default(20)
+  maximumReviews Int @default(200)
+  enableSound    Boolean @default(true)
+  enableSpeech   Boolean @default(true)
+  language       Language @default(JA)
+  theme          Theme @default(SYSTEM)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("UserSetting")
+}
+
+model Deck {
+  id          String @id @db.Char(36)
+  userId      String @db.Char(36)
+  title       String @db.VarChar(100)
+  description String? @db.Text
+  color       String? @db.VarChar(20)
+  icon        String? @db.VarChar(50)
+  sortOrder   Int @default(0)
+  isArchived  Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  words       Word[]
+  @@index([userId])
+  @@index([userId, sortOrder])
+  @@map("Deck")
+}
+
+model Word {
+  id               String @id @db.Char(36)
+  deckId           String @db.Char(36)
+  word             String @db.VarChar(150)
+  pronunciation    String? @db.VarChar(255)
+  partOfSpeech     String? @db.VarChar(50)
+  meaning          String @db.Text
+  memo             String? @db.Text
+  difficulty       Int?
+  source           String? @db.VarChar(100)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+  deck             Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  exampleSentences ExampleSentence[]
+  synonyms         Synonym[]
+  antonyms         Antonym[]
+  collocations     Collocation[]
+  card             Card?
+  @@index([deckId])
+  @@index([word])
+  @@index([partOfSpeech])
+  @@unique([deckId, word])
+  @@map("Word")
+}
+
+model ExampleSentence {
+  id String @id @db.Char(36)
+  wordId String @db.Char(36)
+  english String @db.Text
+  japanese String? @db.Text
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  @@index([wordId])
+  @@index([wordId, sortOrder])
+  @@map("ExampleSentence")
+}
+
+model Synonym {
+  id String @id @db.Char(36)
+  wordId String @db.Char(36)
+  value String @db.VarChar(150)
+  explanation String? @db.Text
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  @@index([wordId])
+  @@index([wordId, sortOrder])
+  @@map("Synonym")
+}
+
+model Antonym {
+  id String @id @db.Char(36)
+  wordId String @db.Char(36)
+  value String @db.VarChar(150)
+  explanation String? @db.Text
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  @@index([wordId])
+  @@index([wordId, sortOrder])
+  @@map("Antonym")
+}
+
+model Collocation {
+  id String @id @db.Char(36)
+  wordId String @db.Char(36)
+  phrase String @db.VarChar(255)
+  meaning String? @db.Text
+  example String? @db.Text
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  @@index([wordId])
+  @@index([wordId, sortOrder])
+  @@map("Collocation")
+}
+
+model Card {
+  id String @id @db.Char(36)
+  wordId String @unique @db.Char(36)
+  isSuspended Boolean @default(false)
+  isStarred Boolean @default(false)
+  lastStudiedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  fsrsState FSRSState?
+  reviewLogs ReviewLog[]
+  @@index([wordId])
+  @@map("Card")
+}
+
+model FSRSState {
+  id String @id @db.Char(36)
+  cardId String @unique @db.Char(36)
+  state FSRSStateType @default(NEW)
+  stability Float @default(0)
+  difficulty Float @default(0)
+  due DateTime
+  lastReview DateTime?
+  reps Int @default(0)
+  lapses Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  @@index([due])
+  @@index([state])
+  @@map("FSRSState")
+}
+
+model ReviewLog {
+  id String @id @db.Char(36)
+  userId String @db.Char(36)
+  cardId String @db.Char(36)
+  rating ReviewRating
+  reviewMode ReviewMode
+  responseTime Int?
+  reviewedAt DateTime
+  syncStatus SyncStatus @default(PENDING)
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  @@index([userId, reviewedAt])
+  @@index([cardId, reviewedAt])
+  @@index([syncStatus])
+  @@map("ReviewLog")
+}
+
+model DailyStatistic {
+  id String @id @db.Char(36)
+  userId String @db.Char(36)
+  date DateTime
+  reviewCount Int @default(0)
+  studyTime Int @default(0)
+  correctCount Int @default(0)
+  incorrectCount Int @default(0)
+  accuracyRate Float @default(0)
+  syncStatus SyncStatus @default(PENDING)
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("DailyStatistic")
+}

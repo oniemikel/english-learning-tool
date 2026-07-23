@@ -1,5 +1,6 @@
-**/node_modules/
-**/.next/
-
-**/.obsidian/
 **/.agents/
+node_modules/
+.next/
+.env
+.env.local
+*.log

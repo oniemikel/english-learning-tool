@@ -38,20 +38,24 @@ enum Theme {
   DARK
   SYSTEM
 }
+enum AuthProvider {
+  GOOGLE
+}
 
 model User {
-  id           String @id @db.Char(36)
-  email        String @unique @db.VarChar(255)
-  passwordHash String @db.VarChar(255)
-  displayName  String @db.VarChar(100)
-  avatarUrl    String? @db.VarChar(500)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  deletedAt    DateTime?
-  setting      UserSetting?
-  decks        Deck[]
-  reviewLogs   ReviewLog[]
-  statistics   DailyStatistic[]
+  id                String       @id @db.Char(36)
+  email             String       @unique @db.VarChar(255)
+  authProvider      AuthProvider @default(GOOGLE)
+  providerAccountId String       @unique @db.VarChar(255)
+  displayName       String       @db.VarChar(100)
+  avatarUrl         String?      @db.VarChar(500)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  deletedAt         DateTime?
+  setting           UserSetting?
+  decks             Deck[]
+  reviewLogs        ReviewLog[]
+  statistics        DailyStatistic[]
   @@map("User")
 }
 

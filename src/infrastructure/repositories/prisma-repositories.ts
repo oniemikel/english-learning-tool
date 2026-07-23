@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { BasePrismaRepository } from './base-prisma-repository';
+import { toRepositoryError } from './repository-error';
 import type {
   IUserRepository, IUserSettingRepository, IDeckRepository, IWordRepository,
   ICardRepository, IReviewRepository, IStatisticRepository,
@@ -15,7 +16,9 @@ export class UserRepository extends BasePrismaRepository<import('@prisma/client'
 export class UserSettingRepository extends BasePrismaRepository<import('@prisma/client').UserSetting, UserSettingCreateInput, UserSettingUpdateInput> implements IUserSettingRepository {
   protected readonly softDelete = false;
   protected get delegate() { return this.db.userSetting; }
-  override delete(id: string) { return this.db.userSetting.delete({ where: { id } }); }
+  override async delete(id: string) {
+    try { return await this.db.userSetting.delete({ where: { id } }); } catch (error) { throw toRepositoryError(error); }
+  }
 }
 export class DeckRepository extends BasePrismaRepository<import('@prisma/client').Deck, DeckCreateInput, DeckUpdateInput> implements IDeckRepository {
   protected get delegate() { return this.db.deck; }

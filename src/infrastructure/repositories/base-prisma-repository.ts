@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { toRepositoryError } from './repository-error';
 
 export abstract class BasePrismaRepository<T, CreateInput, UpdateInput> {
   protected readonly softDelete: boolean = true;
@@ -12,14 +13,20 @@ export abstract class BasePrismaRepository<T, CreateInput, UpdateInput> {
     updateMany(args: { where: { id: string; deletedAt: null }; data: Record<string, unknown> }): Promise<{ count: number }>;
   };
 
-  create(data: CreateInput) { return this.delegate.create({ data }); }
-  findById(id: string) { return this.delegate.findFirst({ where: this.where({ id }) }); }
-  findAll({ skip = 0, take = 20 }: { skip?: number; take?: number } = {}) {
-    return this.delegate.findMany({ where: this.where(), skip, take });
+  async create(data: CreateInput) {
+    try { return await this.delegate.create({ data }); } catch (error) { throw toRepositoryError(error); }
   }
-  update(id: string, data: UpdateInput) { return this.delegate.update({ where: { id }, data }); }
-  delete(id: string) {
-    return this.delegate.update({ where: { id }, data: { deletedAt: new Date() } as UpdateInput });
+  async findById(id: string) {
+    try { return await this.delegate.findFirst({ where: this.where({ id }) }); } catch (error) { throw toRepositoryError(error); }
+  }
+  findAll({ skip = 0, take = 20 }: { skip?: number; take?: number } = {}) {
+    return this.delegate.findMany({ where: this.where(), skip, take }).catch((error) => { throw toRepositoryError(error); });
+  }
+  async update(id: string, data: UpdateInput) {
+    try { return await this.delegate.update({ where: { id }, data }); } catch (error) { throw toRepositoryError(error); }
+  }
+  async delete(id: string) {
+    try { return await this.delegate.update({ where: { id }, data: { deletedAt: new Date() } as UpdateInput }); } catch (error) { throw toRepositoryError(error); }
   }
 
   private where(where: Record<string, unknown> = {}) {

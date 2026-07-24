@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f7f5;
+  --foreground: #171717;
+  --muted: #e9ece8;
+  --muted-foreground: #5f655f;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --border: #d8ddd8;
+  --primary: #103f2f;
+  --primary-foreground: #f2f8f5;
+  --accent: #dce8e1;
+  --accent-foreground: #17372c;
+  --destructive: #8e1f1f;
+  --destructive-foreground: #fff0f0;
+  --ring: #1b6b4f;
+  --radius-card: 12px;
+  --radius-control: 8px;
+}
+
+.dark {
+  --background: #101411;
+  --foreground: #ebf2ed;
+  --muted: #1d2821;
+  --muted-foreground: #9db0a2;
+  --card: #131b15;
+  --card-foreground: #e8f1ea;
+  --border: #2a3a2f;
+  --primary: #4fb38b;
+  --primary-foreground: #07120d;
+  --accent: #223629;
+  --accent-foreground: #daf4e6;
+  --destructive: #d15a5a;
+  --destructive-foreground: #220a0a;
+  --ring: #4fb38b;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 700px at 10% -10%, rgba(16, 63, 47, 0.12), transparent 60%),
+    radial-gradient(900px 500px at 120% 10%, rgba(31, 92, 68, 0.1), transparent 55%),
+    var(--background);
+  color: var(--foreground);
+}
+
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.card-shadow {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02), 0 6px 24px rgba(0, 0, 0, 0.04);
+}

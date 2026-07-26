@@ -7,7 +7,7 @@ import { listHistory } from '@/lib/mock-api';
 import { formatDate } from '@/lib/utils';
 
 export default function HistoryPage() {
-  const historyQuery = useQuery({ queryKey: ['history'], queryFn: listHistory });
+  const historyQuery = useQuery({ queryKey: ['history'], queryFn: () => listHistory() });
 
   return (
     <section>

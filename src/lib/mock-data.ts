@@ -5,6 +5,7 @@ export type Deck = {
   wordCount: number;
   dueCount: number;
   newCount: number;
+  progress: number;
   isPublic: boolean;
   updatedAt: string;
 };
@@ -34,6 +35,11 @@ export type History = {
   createdAt: string;
 };
 
+export type Activity = {
+  date: string;
+  count: number;
+};
+
 export const mockDecks: Deck[] = [
   {
     id: 'deck-1',
@@ -42,6 +48,7 @@ export const mockDecks: Deck[] = [
     wordCount: 180,
     dueCount: 28,
     newCount: 15,
+    progress: 0.75,
     isPublic: true,
     updatedAt: '2026-07-24T20:10:00+09:00',
   },
@@ -52,6 +59,7 @@ export const mockDecks: Deck[] = [
     wordCount: 96,
     dueCount: 9,
     newCount: 7,
+    progress: 0.4,
     isPublic: false,
     updatedAt: '2026-07-24T09:30:00+09:00',
   },
@@ -62,6 +70,7 @@ export const mockDecks: Deck[] = [
     wordCount: 132,
     dueCount: 21,
     newCount: 11,
+    progress: 0.9,
     isPublic: true,
     updatedAt: '2026-07-23T18:05:00+09:00',
   },
@@ -148,4 +157,5 @@ export const dashboardSummary = {
   learnedToday: 52,
   streakDays: 17,
   reviewAccuracy: 79,
+  activity: [] as Activity[],
 };

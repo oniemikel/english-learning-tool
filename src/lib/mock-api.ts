@@ -2,16 +2,37 @@ import { dashboardSummary, mockDecks, mockHistory, mockWords, type Deck, type Wo
 
 const delay = (ms = 220) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function generateActivityData() {
+  const data = [];
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    data.push({
+      date: date.toISOString().split('T')[0],
+      count: Math.floor(Math.random() * 15),
+    });
+  }
+  return data;
+}
+dashboardSummary.activity = generateActivityData();
+
 export async function getDashboardSummary() {
   await delay();
   return dashboardSummary;
 }
 
-export async function listDecks(query?: string) {
+export async function listDecks(options: { query?: string; limit?: number } = {}) {
   await delay();
-  if (!query) return mockDecks;
-  const lowered = query.toLowerCase();
-  return mockDecks.filter((deck) => deck.name.toLowerCase().includes(lowered));
+  let result = mockDecks;
+  if (options.query) {
+    const lowered = options.query.toLowerCase();
+    result = mockDecks.filter((deck) => deck.name.toLowerCase().includes(lowered));
+  }
+  if (options.limit) {
+    result = result.slice(0, options.limit);
+  }
+  return result;
 }
 
 export async function getDeckById(id: string) {
@@ -27,6 +48,7 @@ export async function createDeck(data: Pick<Deck, 'name' | 'description' | 'isPu
     dueCount: 0,
     newCount: 0,
     wordCount: 0,
+    progress: 0,
     ...data,
   } satisfies Deck;
 }
@@ -60,9 +82,18 @@ export async function createWord(data: Pick<Word, 'word' | 'translation' | 'part
   } satisfies Word;
 }
 
-export async function listHistory() {
+export async function listHistory(options: { limit?: number } = {}) {
   await delay();
-  return mockHistory;
+  let result = mockHistory;
+  if (options.limit) {
+    result = result.slice(0, options.limit);
+  }
+  return result;
+}
+
+export async function getActivity() {
+  await delay();
+  return generateActivityData();
 }
 
 export async function getStatistics(range: '7d' | '30d' | '90d') {

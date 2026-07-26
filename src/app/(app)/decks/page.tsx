@@ -1,57 +1,136 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
 import { listDecks } from '@/lib/mock-api';
-import { formatDate } from '@/lib/utils';
+import { useDebounce } from '@/hooks/use-debounce';
+import { DeckCard } from '@/components/decks/deck-card';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import type { Deck } from '@/lib/mock-data';
+
+// Mock delete function
+const deleteDeck = async (id: string) => {
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  console.log(`Deleted deck with id: ${id}`);
+  return { id };
+};
 
 export default function DecksPage() {
-  const [query, setQuery] = useState('');
-  const decksQuery = useQuery({ queryKey: ['decks', query], queryFn: () => listDecks(query) });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
+  const queryClient = useQueryClient();
+
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  const decksQuery = useQuery({
+    queryKey: ['decks', debouncedSearchQuery],
+    queryFn: () => listDecks({ query: debouncedSearchQuery }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteDeck,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['decks'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedDeck(null);
+    },
+  });
+
+  const handleDeleteClick = (deck: Deck) => {
+    setSelectedDeck(deck);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (selectedDeck) {
+      deleteMutation.mutate(selectedDeck.id);
+    }
+  };
 
   return (
-    <section>
-      <PageTitle
-        title="デッキ一覧"
-        description="検索とカード表示で学習対象を素早く切り替えます。"
-        actions={
-          <Link href="/decks/new">
-            <Button>デッキを作成</Button>
-          </Link>
-        }
-      />
+    <>
+      <section>
+        <PageTitle
+          title="Decks"
+          description="Create, search, and manage your word decks."
+          actions={
+            <div className="flex gap-2">
+              <Link href="/csv-import">
+                <Button variant="outline">Import from CSV</Button>
+              </Link>
+              <Link href="/decks/new">
+                <Button>New Deck</Button>
+              </Link>
+            </div>
+          }
+        />
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-[1fr_160px]">
-        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="デッキ名で検索" />
-        <Button variant="secondary">並び替え: 更新日</Button>
-      </div>
+        <div className="mb-6">
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search decks by name..."
+            className="max-w-sm"
+          />
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {decksQuery.data?.map((deck) => (
-          <Link key={deck.id} href={`/decks/${deck.id}`}>
-            <Card className="h-full hover:-translate-y-0.5 transition">
-              <CardContent className="space-y-3 pt-5">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold">{deck.name}</h3>
-                  <Badge>{deck.isPublic ? '公開' : '非公開'}</Badge>
-                </div>
-                <p className="text-sm text-[var(--muted-foreground)]">{deck.description}</p>
-                <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
-                  <span>{deck.wordCount}語</span>
-                  <span>Due {deck.dueCount}</span>
-                  <span>{formatDate(deck.updatedAt)}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-    </section>
+        {decksQuery.isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-56" />
+            ))}
+          </div>
+        ) : decksQuery.isError ? (
+          <div className="text-center text-red-500">Failed to load decks.</div>
+        ) : !decksQuery.data || decksQuery.data.length === 0 ? (
+          <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed">
+            <h3 className="text-xl font-semibold">No decks found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Get started by creating your first deck.</p>
+            <Link href="/decks/new" className="mt-4">
+              <Button>Create New Deck</Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {decksQuery.data.map((deck) => (
+              <DeckCard key={deck.id} deck={deck} onDelete={() => handleDeleteClick(deck)} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the deck "{selectedDeck?.name}" and all of its
+              words.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

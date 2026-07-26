@@ -1,83 +1,127 @@
-# デッキ作成
+# Create Deck Screen
 
-## 目的
+## 1. Purpose
+To provide a form for users to create a new word deck by providing a name and an optional description.
 
-新しい単語帳を作成し、単語登録または学習準備へ進む。
+## 2. URL
+- `/decks/new`
 
-## URL
+## 3. Target Users
+- All authenticated users.
 
-`/decks/new`
+## 4. Layout Structure
+- **Header:** Standard application header.
+- **Sidebar:** Standard application sidebar on desktop.
+- **Main Content:** A simple, single-column form layout centered within the main content area. It includes a page title, input fields, and action buttons.
+- **Footer:** Not present.
+- **Responsive Layout:** The form is centered and responsive by nature. It will stack vertically on all devices.
 
-## 利用者
+## 5. Component List
+- **`PageTitle` (Existing Component)**
+  - **Role:** Displays the title of the screen, "Create New Deck".
+- **`Input` (from `shadcn/ui`)**
+  - **Role:** For the deck name.
+- **`Textarea` (from `shadcn/ui`)**
+  - **Role:** For the deck description.
+- **`Button` (from `shadcn/ui`)**
+  - **Role:** For form submission ("Create Deck") and cancellation ("Cancel").
+- **`Form` components (from `react-hook-form` and `shadcn/ui`)**
+  - **Role:** To manage the form state, validation, and submission.
 
-認証済み利用者。
+## 6. Display Items
+- A form with fields for "Name" and "Description".
 
-## レイアウト構成
+## 7. Input Fields
+- **Deck Name:**
+  - **Field Name:** `name`
+  - **Data Type:** `string`
+  - **Required:** Yes
+  - **Default Value:** `""`
+  - **Validation Rules:**
+    - Must be between 1 and 100 characters.
+    - A required field message will be shown if empty.
+- **Deck Description:**
+  - **Field Name:** `description`
+  - **Data Type:** `string`
+  - **Required:** No
+  - **Default Value:** `""`
+  - **Validation Rules:**
+    - Maximum length of 500 characters.
 
-共通App Shell内に戻るリンク、幅640pxのフォームカード、保存Action Barを表示する。MobileではAction Barを下部固定する。
+## 8. Buttons & Actions
+- **`Create Deck` Button:**
+  - **Type:** `submit`
+  - **Action:** Submits the form data to the API. On success, it redirects the user to the newly created deck's detail page (`/decks/[new-id]`).
+  - **Handler:** The `react-hook-form` `handleSubmit` function.
+  - **State:** Shows a loading indicator and is disabled during form submission.
+- **`Cancel` Button:**
+  - **Action:** Discards the form and navigates the user back to the Deck List screen (`/decks`).
 
-## コンポーネント一覧
+## 9. Dialogs / Modals
+- None.
 
-| コンポーネント | 役割 | 状態 |
-| --- | --- | --- |
-| DeckForm | デッキ情報入力 | editing / invalid / saving |
-| ColorPicker | カード識別色 | default |
-| SaveActionBar | 作成・取消 | idle / saving |
+## 10. Error States & Display
+- **Validation Errors:** Displayed inline under each respective form field (e.g., "Name is required").
+- **API Error:** If the form submission fails due to a server or network error, a toast notification is displayed with a message like "Failed to create deck. Please try again." The submit button becomes active again.
 
-## 表示項目
+## 11. Loading States
+- **Submitting:** When the "Create Deck" button is clicked, it enters a loading state (disabled with a spinner) until the API response is received.
 
-作成ガイド、入力文字数、公開設定の説明。
+## 12. Empty States
+- Not applicable. This is a form for creation.
 
-## 入力項目
+## 13. API Integration
+- **Create Deck:**
+  - **Endpoint:** `POST /api/decks`
+  - **HTTP Method:** `POST`
+  - **Request Body Structure:**
+    ```json
+    {
+      "name": "My New Deck",
+      "description": "A description for the deck."
+    }
+    ```
+  - **Expected Response Structure (Success):**
+    ```json
+    {
+      "success": true,
+      "data": {
+        "id": "new-uuid-...",
+        "name": "My New Deck",
+        "description": "A description for the deck.",
+        "wordCount": 0,
+        "progress": 0,
+        "createdAt": "2026-07-26T11:00:00Z"
+      }
+    }
+    ```
 
-| 項目名 | 型 | 必須 | 初期値 | バリデーション |
-| --- | --- | --- | --- | --- |
-| デッキ名 | Text | ○ | 空 | 1〜100文字、前後空白除去 |
-| 説明 | TextArea | × | 空 | 1000文字以内 |
-| 公開設定 | Switch | ○ | false | boolean |
-| 色 | Color picker | × | accent | 定義済みトークンのみ |
+## 14. State Management
+- **React Hook Form (`useForm`) with Zod (`zodResolver`):**
+  - To manage the entire form's state, including field values, validation, and submission state (`isSubmitting`).
+  - A Zod schema will be defined to enforce the validation rules.
+- **TanStack Query (`useMutation`):**
+  - To handle the API mutation (the `POST` request).
+  - Manages the loading (`isLoading`) and error states of the API call.
 
-## ボタン
-
-| ボタン | 押下時の処理 |
-| --- | --- |
-| 作成 | Zod検証後、作成し詳細へ遷移 |
-| キャンセル | 未保存変更時は確認後`/decks`へ遷移 |
-
-## ダイアログ
-
-未保存変更の破棄確認Dialog。
-
-## エラー表示
-
-各項目下のField Errorとフォーム上部Alert。
-
-## ローディング表示
-
-保存中はフォームを無効化し、作成ボタンにSpinnerを表示する。
-
-## 空データ表示
-
-該当なし。
-
-## API
-
-| 利用API | HTTPメソッド | レスポンス |
-| --- | --- | --- |
-| Mock `/api/decks` | POST | 作成済みDeck |
-
-## 状態管理
-
-React Hook Form + Zod: フォーム。React State: 破棄確認。TanStack Query: 作成Mutation。
-
-## 画面遷移
-
+## 15. Screen Flow / Navigation
 ```mermaid
-flowchart LR
-  Create -->|保存| Detail[/decks/id]
-  Create -->|取消| Decks[/decks]
+graph TD
+    A[User clicks "New Deck" on /decks] --> B[Navigate to /decks/new];
+    B --> C[Display empty "Create Deck" form];
+    C --> D[User fills out the form];
+    D --> E[User clicks "Create Deck"];
+    E --> F{Form validation};
+    F -- Fails --> G[Show inline validation errors];
+    F -- Passes --> H{Submit data to POST /api/decks};
+    H -- Success --> I[Redirect to the new deck's page /decks/[new-id]];
+    H -- Failure --> J[Show error toast and re-enable form];
+    
+    C --> K[User clicks "Cancel"];
+    K --> L[Navigate back to /decks];
 ```
 
-## レスポンシブ仕様
-
-PC/Tablet: 中央フォーム。Mobile: 全幅フォーム、保存操作を下部固定する。
+## 16. Responsive Specifications
+- **PC:** The form is displayed in a centered card with a maximum width (e.g., 768px) to ensure it doesn't become too wide on large screens.
+- **Tablet:** Similar to PC, the form is centered with a comfortable width.
+- **Mobile:** The form card takes up most of the screen width, with minimal horizontal padding. Field labels are likely stacked on top of the inputs rather than being side-by-side.

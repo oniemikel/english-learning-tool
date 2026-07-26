@@ -11,7 +11,7 @@ import { listDecks } from '@/lib/mock-api';
 
 export default function PublicDecksPage() {
   const [query, setQuery] = useState('');
-  const decksQuery = useQuery({ queryKey: ['public-decks', query], queryFn: () => listDecks(query) });
+  const decksQuery = useQuery({ queryKey: ['public-decks', query], queryFn: () => listDecks({ query }) });
   const publicDecks = decksQuery.data?.filter((deck) => deck.isPublic) ?? [];
 
   return (

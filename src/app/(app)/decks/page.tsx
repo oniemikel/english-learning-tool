@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Deck } from '@/lib/mock-data';
+import { PlusSquare } from 'lucide-react';
 
 // Mock delete function
 const deleteDeck = async (id: string) => {
@@ -65,41 +66,37 @@ export default function DecksPage() {
   return (
     <>
       <section>
-        <PageTitle
-          title="Decks"
-          description="Create, search, and manage your word decks."
-          actions={
-            <div className="flex gap-2">
-              <Link href="/csv-import">
-                <Button variant="outline">Import from CSV</Button>
-              </Link>
-              <Link href="/decks/new">
-                <Button>New Deck</Button>
-              </Link>
-            </div>
-          }
-        />
+        <PageTitle title="Decks" description="Create, search, and manage your word decks." />
 
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search decks by name..."
             className="max-w-sm"
           />
+          <div className="flex gap-2">
+            <Link href="/csv-import">
+              <Button variant="outline">Import from CSV</Button>
+            </Link>
+            <Link href="/decks/new">
+              <Button>New Deck</Button>
+            </Link>
+          </div>
         </div>
 
         {decksQuery.isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-56" />
+              <Skeleton key={i} className="h-52" />
             ))}
           </div>
         ) : decksQuery.isError ? (
           <div className="text-center text-red-500">Failed to load decks.</div>
         ) : !decksQuery.data || decksQuery.data.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed">
-            <h3 className="text-xl font-semibold">No decks found</h3>
+          <div className="flex h-80 flex-col items-center justify-center rounded-lg border-2 border-dashed">
+            <PlusSquare className="h-16 w-16 text-muted-foreground" />
+            <h3 className="mt-4 text-xl font-semibold">No decks found</h3>
             <p className="mt-2 text-sm text-muted-foreground">Get started by creating your first deck.</p>
             <Link href="/decks/new" className="mt-4">
               <Button>Create New Deck</Button>
@@ -108,7 +105,7 @@ export default function DecksPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {decksQuery.data.map((deck) => (
-              <DeckCard key={deck.id} deck={deck} onDelete={() => handleDeleteClick(deck)} />
+              <DeckCard key={deck.id} deck={deck} onDelete={handleDeleteClick} />
             ))}
           </div>
         )}

@@ -1,17 +1,38 @@
-'use client';
+// src/components/layout/header.tsx
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { DUMMY_USER } from '@/lib/mock-data';
+import { Icons } from '@/components/icons';
 
-import Link from 'next/link';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-
-export function Header() {
+const Header = () => {
   return (
-    <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--card)_92%,transparent)]/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-4 px-4 md:px-6">
-        <Link href="/dashboard" className="text-sm font-semibold tracking-wide text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
-          English Learning Tool
-        </Link>
-        <ThemeToggle />
+    <header className="flex h-16 items-center border-b bg-white px-6">
+      <div className="flex items-center gap-4">
+        <h1 className="text-xl font-semibold">Dashboard</h1>
+        <span className="text-xl text-gray-300">·</span>
+        <p className="text-gray-500">Saturday, 26 Jul 2026</p>
+      </div>
+      <div className="ml-auto flex items-center gap-4">
+        <div className="relative">
+          <Icons.Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+          <Input
+            placeholder="Search words, decks…"
+            className="w-64 rounded-lg bg-gray-100 pl-10"
+          />
+        </div>
+        <Button variant="ghost" size="icon" className="relative">
+          <Icons.Bell className="h-5 w-5" />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#5b5bd6]" />
+        </Button>
+        <Avatar className="h-9 w-9">
+          <AvatarFallback className="bg-[#5b5bd6] text-white">
+            {DUMMY_USER.avatar}
+          </AvatarFallback>
+        </Avatar>
       </div>
     </header>
   );
-}
+};
+
+export default Header;

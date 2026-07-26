@@ -1,158 +1,183 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Badge } from '@/components/ui/badge';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
-import { Textarea } from '@/components/ui/textarea';
 import { getDeckById, listWords } from '@/lib/mock-api';
-
-const editSchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  description: z.string().max(1000),
-  isPublic: z.boolean(),
-});
-
-type EditValues = z.infer<typeof editSchema>;
+import { StatCard } from '@/components/ui/stat-card';
+import { Book, Check, Globe, Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { formatDate } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DeckDetailPage() {
   const params = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
-  const mode = searchParams.get('mode');
   const router = useRouter();
   const id = params.id;
-  const deckQuery = useQuery({ queryKey: ['deck', id], queryFn: () => getDeckById(id) });
-  const wordsQuery = useQuery({ queryKey: ['words'], queryFn: () => listWords() });
 
-  const form = useForm<EditValues>({
-    resolver: zodResolver(editSchema),
-    values: {
-      name: deckQuery.data?.name ?? '',
-      description: deckQuery.data?.description ?? '',
-      isPublic: deckQuery.data?.isPublic ?? false,
-    },
+  const deckQuery = useQuery({
+    queryKey: ['deck', id],
+    queryFn: () => getDeckById(id),
+    enabled: !!id,
   });
 
-  const saveMutation = useMutation({
-    mutationFn: async (values: EditValues) => values,
-    onSuccess: () => router.push(`/decks/${id}`),
+  const wordsQuery = useQuery({
+    queryKey: ['words', { deckId: id }],
+    queryFn: () => listWords({ deckId: id }),
+    enabled: !!id,
   });
 
-  if (deckQuery.isLoading || !deckQuery.data) {
-    return <div className="rounded-[var(--radius-card)] border bg-[var(--card)] p-6">読み込み中またはデータが見つかりません。</div>;
-  }
+  const deck = deckQuery.data;
 
-  if (mode === 'edit') {
+  if (deckQuery.isLoading) {
     return (
-      <section>
-        <PageTitle title="デッキ編集" description="公開設定や説明文を更新します。" />
-        <Card className="mx-auto max-w-2xl">
-          <CardHeader>
-            <CardTitle>{deckQuery.data.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form
-              className="space-y-4"
-              onSubmit={form.handleSubmit((values) => {
-                saveMutation.mutate(values);
-              })}
-            >
-              <label className="block space-y-1">
-                <span className="text-sm">デッキ名</span>
-                <Input {...form.register('name')} />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm">説明</span>
-                <Textarea {...form.register('description')} rows={5} />
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" {...form.register('isPublic')} className="h-4 w-4" />
-                公開する
-              </label>
-              <div className="flex justify-end gap-2">
-                <Link href={`/decks/${id}`}>
-                  <Button type="button" variant="outline">
-                    キャンセル
-                  </Button>
-                </Link>
-                <Button type="submit">保存</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </section>
+      <div className="p-6">
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="mt-2 h-6 w-3/4" />
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <div className="mt-6">
+          <Skeleton className="h-96" />
+        </div>
+      </div>
     );
   }
+
+  if (deckQuery.isError || !deck) {
+    return <div className="p-6 text-center">Deck not found.</div>;
+  }
+
+  const stats = [
+    {
+      title: 'Words',
+      value: deck.wordCount,
+      icon: <Book className="h-5 w-5 text-muted-foreground" />,
+    },
+    {
+      title: 'Due',
+      value: deck.dueCount,
+      icon: <Check className="h-5 w-5 text-muted-foreground" />,
+    },
+    {
+      title: 'New',
+      value: deck.newCount,
+      icon: <Plus className="h-5 w-5 text-muted-foreground" />,
+    },
+    {
+      title: 'Status',
+      value: deck.isPublic ? 'Public' : 'Private',
+      icon: <Globe className="h-5 w-5 text-muted-foreground" />,
+    },
+  ];
 
   return (
     <section>
       <PageTitle
-        title={deckQuery.data.name}
-        description={deckQuery.data.description}
+        title={deck.name}
+        description={deck.description}
         actions={
-          <>
-            <Link href={`/decks/${id}?mode=edit`}>
-              <Button variant="outline">編集</Button>
+          <div className="flex items-center gap-2">
+            <Link href={`/decks/${id}/edit`}>
+              <Button variant="outline">Edit</Button>
             </Link>
-            <Link href={`/csv-import?deckId=${id}`}>
-              <Button variant="secondary">CSVインポート</Button>
+            <Link href={`/words/new?deckId=${id}`}>
+              <Button variant="outline">Add Word</Button>
             </Link>
             <Link href={`/study?deckId=${id}`}>
-              <Button>このデッキを学習</Button>
+              <Button>Study Deck</Button>
             </Link>
-          </>
+          </div>
         }
       />
 
-      <div className="mb-5 grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">単語数</p>
-            <p className="mt-2 text-2xl font-semibold">{deckQuery.data.wordCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">Due</p>
-            <p className="mt-2 text-2xl font-semibold">{deckQuery.data.dueCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">公開状態</p>
-            <p className="mt-2 text-2xl font-semibold">{deckQuery.data.isPublic ? '公開' : '非公開'}</p>
-          </CardContent>
-        </Card>
+      <div className="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <StatCard key={stat.title} title={stat.title} value={stat.value} icon={stat.icon} />
+        ))}
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>単語プレビュー</CardTitle>
+          <CardTitle>Words in this Deck</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {wordsQuery.data
-            ?.filter((word) => word.deckId === id)
-            .slice(0, 6)
-            .map((word) => (
-              <Link
-                key={word.id}
-                href={`/words/${word.id}`}
-                className="flex items-center justify-between rounded-[var(--radius-control)] border border-[var(--border)] px-3 py-2 hover:bg-[var(--muted)]"
-              >
-                <div>
-                  <p className="font-medium">{word.word}</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">{word.translation}</p>
-                </div>
-                <Badge>{word.partOfSpeech}</Badge>
-              </Link>
-            ))}
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Word</TableHead>
+                <TableHead>Translation</TableHead>
+                <TableHead>Part of Speech</TableHead>
+                <TableHead>Last Reviewed</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {wordsQuery.isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-5 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-32" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : wordsQuery.isError ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">
+                    Could not load words.
+                  </TableCell>
+                </TableRow>
+              ) : wordsQuery.data?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-48 text-center">
+                    <p className="font-semibold">No words in this deck yet.</p>
+                    <p className="text-muted-foreground">
+                      Get started by adding your first word.
+                    </p>
+                    <Link href={`/words/new?deckId=${id}`} className="mt-4 inline-block">
+                      <Button>Add a New Word</Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                wordsQuery.data?.map((word) => (
+                  <TableRow
+                    key={word.id}
+                    onClick={() => router.push(`/words/${word.id}`)}
+                    className="cursor-pointer"
+                  >
+                    <TableCell className="font-medium">{word.word}</TableCell>
+                    <TableCell>{word.translation}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{word.partOfSpeech}</Badge>
+                    </TableCell>
+                    <TableCell>{formatDate(word.nextReview)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </section>

@@ -1,25 +1,21 @@
-'use client';
+// src/components/layout/app-shell.tsx
+import Header from './header';
+import Sidebar from './sidebar';
 
-import type { ReactNode } from 'react';
-import { BottomNav } from './bottom-nav';
-import { Header } from './header';
-import { Sidebar } from './sidebar';
+interface AppShellProps {
+  children: React.ReactNode;
+}
 
-type AppShellProps = {
-  children: ReactNode;
-};
-
-export function AppShell({ children }: AppShellProps) {
+const AppShell = ({ children }: AppShellProps) => {
   return (
-    <div className="min-h-screen pb-24 md:pb-0">
-      <Header />
-
-      <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[240px_1fr] md:px-6">
-        <Sidebar />
-        <main>{children}</main>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
-
-      <BottomNav />
     </div>
   );
-}
+};
+
+export default AppShell;

@@ -15,56 +15,63 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Progress } from '@/components/ui/progress';
 import type { Deck } from '@/lib/mock-data';
-import { MoreVertical } from 'lucide-react';
+import { Book, Check, MoreVertical, Plus } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 
 type DeckCardProps = {
   deck: Deck;
-  onDelete: (deckId: string) => void;
+  onDelete: (deck: Deck) => void;
 };
 
 export function DeckCard({ deck, onDelete }: DeckCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between">
-        <div>
-          <CardTitle className="hover:underline">
-            <Link href={`/decks/${deck.id}`}>{deck.name}</Link>
-          </CardTitle>
-          <CardDescription className="mt-1 line-clamp-2">{deck.description}</CardDescription>
+    <Card className="flex flex-col">
+      <CardHeader>
+        <CardTitle className="hover:underline">
+          <Link href={`/decks/${deck.id}`}>{deck.name}</Link>
+        </CardTitle>
+        <CardDescription className="mt-1 line-clamp-2 h-10">{deck.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <div className="grid grid-cols-3 gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Book className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold">{deck.wordCount}</span>
+            <span className="text-muted-foreground">Words</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Check className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold">{deck.dueCount}</span>
+            <span className="text-muted-foreground">Due</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Plus className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold">{deck.newCount}</span>
+            <span className="text-muted-foreground">New</span>
+          </div>
         </div>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Link href={`/study?deck=${deck.id}`} className="w-full">
+          <Button className="w-full">Study</Button>
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+            <Button variant="ghost" size="sm" className="ml-2 h-9 w-9 p-0">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
               <Link href={`/decks/${deck.id}/edit`}>Edit</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(deck.id)} className="text-red-500">
+            <DropdownMenuItem onClick={() => onDelete(deck)} className="text-red-500 focus:text-red-500">
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{deck.wordCount} words</span>
-          <span>Updated {new Date(deck.updatedAt).toLocaleDateString()}</span>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <div className="w-full">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Progress</span>
-            <span className="text-xs font-semibold">{Math.round(deck.progress * 100)}%</span>
-          </div>
-          <Progress value={deck.progress * 100} />
-        </div>
       </CardFooter>
     </Card>
   );

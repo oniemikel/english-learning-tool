@@ -2,46 +2,63 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { PageTitle } from '@/components/ui/page-title';
 import { useStudyStore } from '@/stores/study-store';
+import { StatCard } from '@/components/ui/stat-card';
+import { CheckCircle, Target, XCircle } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function StudyResultPage() {
-  const store = useStudyStore();
-  const accuracy = store.solved === 0 ? 0 : Math.round((store.correct / store.solved) * 100);
+  const { solved, correct, reset } = useStudyStore();
+  const accuracy = solved === 0 ? 0 : Math.round((correct / solved) * 100);
+
+  // Reset the store when the component unmounts
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
+
+  const stats = [
+    {
+      title: 'Total Solved',
+      value: solved,
+      icon: <CheckCircle className="h-5 w-5 text-muted-foreground" />,
+    },
+    {
+      title: 'Correct Answers',
+      value: correct,
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+    },
+    {
+      title: 'Incorrect Answers',
+      value: solved - correct,
+      icon: <XCircle className="h-5 w-5 text-red-500" />,
+    },
+    {
+      title: 'Accuracy',
+      value: `${accuracy}%`,
+      icon: <Target className="h-5 w-5 text-muted-foreground" />,
+    },
+  ];
 
   return (
     <section>
-      <PageTitle title="学習結果" description="今回のセッション結果を確認します。" />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">回答数</p>
-            <p className="mt-2 text-2xl font-semibold">{store.solved}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">正答数</p>
-            <p className="mt-2 text-2xl font-semibold">{store.correct}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">正答率</p>
-            <p className="mt-2 text-2xl font-semibold">{accuracy}%</p>
-          </CardContent>
-        </Card>
+      <PageTitle title="Study Session Results" description="Here's how you did in this session." />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <StatCard key={stat.title} title={stat.title} value={stat.value} icon={stat.icon} />
+        ))}
       </div>
       <div className="mt-6 flex flex-wrap justify-end gap-2">
         <Link href="/study">
-          <Button variant="outline">同じ設定で再開</Button>
+          <Button variant="outline">Study Again</Button>
         </Link>
         <Link href="/history">
-          <Button variant="secondary">履歴を見る</Button>
+          <Button variant="secondary">View History</Button>
         </Link>
         <Link href="/dashboard">
-          <Button>ダッシュボードへ</Button>
+          <Button>Back to Dashboard</Button>
         </Link>
       </div>
     </section>

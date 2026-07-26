@@ -53,13 +53,26 @@ export async function createDeck(data: Pick<Deck, 'name' | 'description' | 'isPu
   } satisfies Deck;
 }
 
-export async function listWords(query?: string) {
+export async function listWords(options: { query?: string; deckId?: string; limit?: number } = {}) {
   await delay();
-  if (!query) return mockWords;
-  const lowered = query.toLowerCase();
-  return mockWords.filter(
-    (word) => word.word.toLowerCase().includes(lowered) || word.translation.toLowerCase().includes(lowered),
-  );
+  let result = mockWords;
+
+  if (options.deckId) {
+    result = result.filter((word) => word.deckId === options.deckId);
+  }
+
+  if (options.query) {
+    const lowered = options.query.toLowerCase();
+    result = result.filter(
+      (word) => word.word.toLowerCase().includes(lowered) || word.translation.toLowerCase().includes(lowered),
+    );
+  }
+
+  if (options.limit) {
+    result = result.slice(0, options.limit);
+  }
+
+  return result;
 }
 
 export async function getWordById(id: string) {

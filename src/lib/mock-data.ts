@@ -1,161 +1,136 @@
-export type Deck = {
-  id: string;
-  name: string;
-  description: string;
-  wordCount: number;
-  dueCount: number;
-  newCount: number;
-  progress: number;
-  isPublic: boolean;
-  updatedAt: string;
+// src/lib/mock-data.ts
+import { type Icon } from '@/components/icons';
+
+export const DUMMY_USER = {
+  name: 'Emma Larson',
+  email: 'emma@mail.com',
+  avatar: 'EL',
+  streak: 14,
+  personalBest: 21,
 };
 
-export type Word = {
-  id: string;
-  deckId: string;
-  word: string;
-  translation: string;
-  partOfSpeech: string;
-  nextReview: string;
-  accuracy: number;
-  state: 'ACTIVE' | 'EXCLUDED';
-  definition: string;
-  pronunciation: string;
-  example: string;
-  etymology: string;
+export const SIDEBAR_NAV_ITEMS: {
+  learn: { label: string; href: string; icon: Icon; badge?: number }[];
+  account: { label: string; href: string; icon: Icon }[];
+} = {
+  learn: [
+    {
+      label: 'Dashboard',
+      href: '/dashboard',
+      icon: 'Dashboard',
+    },
+    {
+      label: 'My Decks',
+      href: '/decks',
+      icon: 'Decks',
+      badge: 4,
+    },
+    {
+      label: 'Vocabulary',
+      href: '/words',
+      icon: 'Vocabulary',
+    },
+    {
+      label: 'Progress',
+      href: '/statistics',
+      icon: 'Progress',
+    },
+    {
+      label: 'Goals',
+      href: '/goals',
+      icon: 'Goals',
+    },
+    {
+      label: 'Bookmarks',
+      href: '/bookmarks',
+      icon: 'Bookmarks',
+    },
+  ],
+  account: [
+    {
+      label: 'Settings',
+      href: '/settings',
+      icon: 'Settings',
+    },
+  ],
 };
 
-export type History = {
-  id: string;
-  deckName: string;
-  mode: 'EN_JA' | 'JA_EN' | 'LISTENING' | 'PRONUNCIATION';
-  solved: number;
-  accuracy: number;
-  minutes: number;
-  createdAt: string;
-};
-
-export type Activity = {
-  date: string;
-  count: number;
-};
-
-export const mockDecks: Deck[] = [
-  {
-    id: 'deck-1',
-    name: 'TOEIC 600 Core',
-    description: '頻出語を短時間で反復するデッキ。',
-    wordCount: 180,
-    dueCount: 28,
-    newCount: 15,
-    progress: 0.75,
-    isPublic: true,
-    updatedAt: '2026-07-24T20:10:00+09:00',
+export const DASHBOARD_DATA = {
+  welcome: {
+    name: 'Emma',
+    cardsDue: 44,
   },
-  {
-    id: 'deck-2',
-    name: 'Business Collocations',
-    description: '会議・報告で使う連語表現。',
-    wordCount: 96,
-    dueCount: 9,
-    newCount: 7,
-    progress: 0.4,
-    isPublic: false,
-    updatedAt: '2026-07-24T09:30:00+09:00',
+  todayProgress: {
+    wordsLearned: 47,
+    totalWords: 60,
+    reviewed: 112,
+    correct: 91,
+    new: 12,
   },
-  {
-    id: 'deck-3',
-    name: 'Daily Conversation',
-    description: '日常会話向けの語彙と例文。',
-    wordCount: 132,
-    dueCount: 21,
-    newCount: 11,
-    progress: 0.9,
-    isPublic: true,
-    updatedAt: '2026-07-23T18:05:00+09:00',
+  studyGoals: {
+    dailyWords: { current: 47, goal: 60 },
+    weeklyStreak: { current: 7, goal: 7 },
+    deckMastery: { current: 3, goal: 4 },
   },
-];
-
-export const mockWords: Word[] = [
-  {
-    id: 'word-1',
-    deckId: 'deck-1',
-    word: 'allocate',
-    translation: '割り当てる',
-    partOfSpeech: 'VERB',
-    nextReview: '2026-07-26T09:00:00+09:00',
-    accuracy: 74,
-    state: 'ACTIVE',
-    definition: 'to officially give something to someone',
-    pronunciation: '/ˈæləkeɪt/',
-    example: 'We need to allocate time for review.',
-    etymology: 'from Latin allocare',
+  stats: {
+    wordsLearned: { value: '1,284', change: '+47 today' },
+    accuracy: { value: '91.3%', change: '+2.1% this week' },
+    studyTime: { value: '38h', change: 'This month' },
+    streak: { value: '14 days', change: 'Personal best: 21' },
   },
-  {
-    id: 'word-2',
-    deckId: 'deck-2',
-    word: 'feasible',
-    translation: '実現可能な',
-    partOfSpeech: 'ADJECTIVE',
-    nextReview: '2026-07-25T19:30:00+09:00',
-    accuracy: 68,
-    state: 'ACTIVE',
-    definition: 'possible and practical to do',
-    pronunciation: '/ˈfiːzəbəl/',
-    example: 'The timeline is feasible with two engineers.',
-    etymology: 'from French faisable',
+  recentDecks: [
+    {
+      id: '1',
+      emoji: '📚',
+      title: 'Academic Vocabulary',
+      subtitle: 'IELTS Preparation',
+      tag: 'IELTS',
+      mastered: 87,
+      total: 120,
+      due: 24,
+    },
+    {
+      id: '2',
+      emoji: '💼',
+      title: 'Business English',
+      subtitle: 'Workplace & Meetings',
+      tag: 'Professional',
+      mastered: 54,
+      total: 80,
+      due: 12,
+    },
+    {
+      id: '3',
+      emoji: '🗣️',
+      title: 'Phrasal Verbs',
+      subtitle: 'Everyday Conversational',
+      tag: 'Conversational',
+      mastered: 41,
+      total: 60,
+      due: 8,
+    },
+    {
+      id: '4',
+      emoji: '✍️',
+      title: 'Literary Terms',
+      subtitle: 'SAT / AP English',
+      tag: 'Academic',
+      mastered: 45,
+      total: 45,
+      due: 0,
+    },
+  ],
+  weeklyActivity: {
+    totalWords: 287,
+    change: '+18%',
+    data: [
+      { day: 'Mon', words: 30 },
+      { day: 'Tue', words: 45 },
+      { day: 'Wed', words: 25 },
+      { day: 'Thu', words: 60 },
+      { day: 'Fri', words: 40 },
+      { day: 'Sat', words: 75 },
+      { day: 'Sun', words: 20 },
+    ],
   },
-  {
-    id: 'word-3',
-    deckId: 'deck-3',
-    word: 'commute',
-    translation: '通勤する',
-    partOfSpeech: 'VERB',
-    nextReview: '2026-07-26T07:45:00+09:00',
-    accuracy: 84,
-    state: 'EXCLUDED',
-    definition: 'to travel regularly between work and home',
-    pronunciation: '/kəˈmjuːt/',
-    example: 'I commute by train every morning.',
-    etymology: 'from Latin commutare',
-  },
-];
-
-export const mockHistory: History[] = [
-  {
-    id: 'history-1',
-    deckName: 'TOEIC 600 Core',
-    mode: 'EN_JA',
-    solved: 34,
-    accuracy: 82,
-    minutes: 22,
-    createdAt: '2026-07-24T21:40:00+09:00',
-  },
-  {
-    id: 'history-2',
-    deckName: 'Business Collocations',
-    mode: 'JA_EN',
-    solved: 18,
-    accuracy: 66,
-    minutes: 15,
-    createdAt: '2026-07-24T08:20:00+09:00',
-  },
-  {
-    id: 'history-3',
-    deckName: 'Daily Conversation',
-    mode: 'LISTENING',
-    solved: 20,
-    accuracy: 75,
-    minutes: 17,
-    createdAt: '2026-07-23T22:05:00+09:00',
-  },
-];
-
-export const dashboardSummary = {
-  dueCount: 58,
-  newCount: 33,
-  learnedToday: 52,
-  streakDays: 17,
-  reviewAccuracy: 79,
-  activity: [] as Activity[],
 };

@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react';
-import { AppShell } from '@/components/layout/app-shell';
+// src/app/(app)/layout.tsx
+import AppShell from '@/components/layout/app-shell';
 
-type ProtectedLayoutProps = {
-  children: ReactNode;
-};
-
-export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
+export default function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <AppShell>{children}</AppShell>;
 }

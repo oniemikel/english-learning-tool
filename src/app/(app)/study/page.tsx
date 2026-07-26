@@ -6,16 +6,20 @@ import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageTitle } from '@/components/ui/page-title';
-import { Select } from '@/components/ui/select';
 import { useStudyStore } from '@/stores/study-store';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-const schema = z.object({
+const studyStartSchema = z.object({
   mode: z.enum(['en-ja', 'ja-en', 'listening', 'pronunciation']),
+  newLimit: z.coerce.number().int().min(0).max(100),
+  reviewLimit: z.coerce.number().int().min(0).max(200),
 });
 
-type StudyStartValues = z.infer<typeof schema>;
+type StudyStartValues = z.infer<typeof studyStartSchema>;
 
 const modePathMap: Record<StudyStartValues['mode'], string> = {
   'en-ja': '/study/en-ja',
@@ -30,48 +34,98 @@ export default function StudyStartPage() {
   const deckId = searchParams.get('deckId') ?? store.deckId;
 
   const form = useForm<StudyStartValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { mode: store.mode },
+    resolver: zodResolver(studyStartSchema),
+    defaultValues: {
+      mode: store.mode,
+      newLimit: store.newLimit,
+      reviewLimit: store.reviewLimit,
+    },
   });
 
   const mode = form.watch('mode');
+  const { newLimit, reviewLimit } = form.watch();
+
+  // Update store on form change
   store.setDeckId(deckId);
   store.setMode(mode);
+  store.setNewLimit(newLimit);
+  store.setReviewLimit(reviewLimit);
 
   return (
     <section>
-      <PageTitle title="学習開始" description="デッキとモードを選んで集中セッションを始めます。" />
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader>
-          <CardTitle>セッション設定</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-[var(--radius-control)] bg-[var(--muted)] p-3 text-sm">
-            対象デッキID: <span className="font-medium">{deckId}</span>
-          </div>
+      <PageTitle title="Start Study Session" description="Choose your deck and mode to begin." />
+      <Form {...form}>
+        <form>
+          <Card className="mx-auto max-w-2xl">
+            <CardHeader>
+              <CardTitle>Session Settings</CardTitle>
+              <CardDescription>
+                You are studying deck: <span className="font-semibold">{deckId}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="mode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Study Mode</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a study mode" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="en-ja">English to Japanese</SelectItem>
+                        <SelectItem value="ja-en">Japanese to English</SelectItem>
+                        <SelectItem value="listening">Listening Practice</SelectItem>
+                        <SelectItem value="pronunciation">Pronunciation Practice</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <label className="block space-y-1">
-            <span className="text-sm">学習モード</span>
-            <Select {...form.register('mode')}>
-              <option value="en-ja">英→日学習</option>
-              <option value="ja-en">日→英学習</option>
-              <option value="listening">リスニング学習</option>
-              <option value="pronunciation">発音学習</option>
-            </Select>
-          </label>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="newLimit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Cards Limit</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="reviewLimit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Review Cards Limit</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[var(--radius-control)] border border-[var(--border)] p-3 text-sm">新規上限: 20</div>
-            <div className="rounded-[var(--radius-control)] border border-[var(--border)] p-3 text-sm">レビュー上限: 100</div>
-          </div>
-
-          <div className="flex justify-end">
-            <Link href={modePathMap[mode]}>
-              <Button>学習を開始</Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+              <div className="flex justify-end">
+                <Link href={modePathMap[mode]}>
+                  <Button size="lg">Start Session</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </form>
+      </Form>
     </section>
   );
 }

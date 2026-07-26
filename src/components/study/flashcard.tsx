@@ -1,45 +1,61 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Word } from '@/lib/mock-data';
+import { GradeButtons } from './grade-buttons';
 
 type FlashcardProps = {
-  front: ReactNode;
-  back: ReactNode;
-  isFlipped: boolean;
+  card: Word;
+  promptValue: string;
+  answerValue: string;
+  onGrade: (grade: 'again' | 'hard' | 'good' | 'easy') => void;
+  promptLabel?: string;
+  answerLabel?: string;
 };
 
-export function Flashcard({ front, back, isFlipped }: FlashcardProps) {
-  return (
-    <div className="w-full max-w-2xl [perspective:1000px]">
-      <div
-        className={cn('relative h-96 w-full transition-transform duration-700 [transform-style:preserve-3d]', {
-          '[transform:rotateY(180deg)]': isFlipped,
-        })}
-      >
-        {/* Front of the card */}
-        <Card
-          className={cn(
-            'absolute flex h-full w-full flex-col items-center justify-center [backface-visibility:hidden]',
-          )}
-        >
-          <CardContent className="flex h-full w-full flex-col items-center justify-center p-6 text-center">
-            {front}
-          </CardContent>
-        </Card>
+export function Flashcard({
+  card,
+  promptValue,
+  answerValue,
+  onGrade,
+  promptLabel = 'Word',
+  answerLabel = 'Translation',
+}: FlashcardProps) {
+  const [showAnswer, setShowAnswer] = useState(false);
 
-        {/* Back of the card */}
-        <Card
-          className={cn(
-            'absolute flex h-full w-full flex-col items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]',
-          )}
-        >
-          <CardContent className="flex h-full w-full flex-col items-center justify-center p-6 text-center">
-            {back}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+  const handleGrade = (grade: 'again' | 'hard' | 'good' | 'easy') => {
+    setShowAnswer(false);
+    onGrade(grade);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{promptLabel}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <p className="text-3xl font-semibold tracking-tight">{promptValue}</p>
+
+        {showAnswer && (
+          <div className="space-y-4 rounded-lg bg-accent p-4 text-accent-foreground">
+            <p className="text-lg font-semibold">
+              {answerLabel}: {answerValue}
+            </p>
+            {card.definition && <p className="text-sm">Definition: {card.definition}</p>}
+            {card.example && <p className="text-sm">Example: "{card.example}"</p>}
+          </div>
+        )}
+
+        {showAnswer ? (
+          <GradeButtons onGrade={handleGrade} />
+        ) : (
+          <Button className="w-full" onClick={() => setShowAnswer(true)}>
+            Show Answer
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }

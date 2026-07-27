@@ -46,6 +46,22 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (session.user && typeof token.userId === 'string') session.user.id = token.userId;
       return session;
     },
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isOnLoginPage = nextUrl.pathname === '/';
+
+      if (!isOnLoginPage && !isLoggedIn) {
+        const redirectUrl = new URL('/', nextUrl.origin);
+        redirectUrl.searchParams.append('callbackUrl', nextUrl.href);
+        return Response.redirect(redirectUrl);
+      }
+
+      if (isOnLoginPage && isLoggedIn) {
+        return Response.redirect(new URL('/dashboard', nextUrl.origin));
+      }
+
+      return true;
+    },
   },
   pages: { signIn: '/' },
 });

@@ -15,11 +15,13 @@ function generateActivityData() {
   }
   return data;
 }
-dashboardSummary.activity = generateActivityData();
 
 export async function getDashboardSummary() {
   await delay();
-  return dashboardSummary;
+  return {
+    ...dashboardSummary,
+    activity: generateActivityData(),
+  };
 }
 
 export async function listDecks(options: { query?: string; limit?: number } = {}) {

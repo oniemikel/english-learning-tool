@@ -1,5 +1,31 @@
-// src/lib/mock-data.ts
 import { type Icon } from '@/components/icons';
+
+export interface Deck {
+  id: string;
+  name: string;
+  description?: string;
+  isPublic?: boolean;
+  updatedAt: string;
+  dueCount: number;
+  newCount: number;
+  wordCount: number;
+  progress: number;
+}
+
+export interface Word {
+  id: string;
+  deckId: string;
+  word: string;
+  translation: string;
+  partOfSpeech?: string;
+  definition?: string;
+  pronunciation?: string;
+  example?: string;
+  etymology?: string;
+  nextReview: string;
+  accuracy: number;
+  state: 'ACTIVE' | 'LEARNED' | 'MASTERED';
+}
 
 export const DUMMY_USER = {
   name: 'Emma Larson',
@@ -134,3 +160,45 @@ export const DASHBOARD_DATA = {
     ],
   },
 };
+
+// mock-api.ts から参照するための alias エクスポート
+export const dashboardSummary = {
+  ...DASHBOARD_DATA,
+  activity: [] as { date: string; count: number }[],
+};
+
+export const mockDecks: Deck[] = [
+  {
+    id: '1',
+    name: 'Academic Vocabulary',
+    description: 'IELTS Preparation',
+    isPublic: true,
+    updatedAt: new Date().toISOString(),
+    dueCount: 24,
+    newCount: 10,
+    wordCount: 120,
+    progress: 72,
+  },
+];
+
+export const mockWords: Word[] = [
+  {
+    id: 'word-1',
+    deckId: '1',
+    word: 'resilient',
+    translation: '回復力がある',
+    partOfSpeech: 'adjective',
+    definition: 'Able to withstand or recover quickly from difficult conditions.',
+    nextReview: new Date().toISOString(),
+    accuracy: 85,
+    state: 'ACTIVE',
+  },
+];
+
+export const mockHistory = [
+  {
+    id: 'hist-1',
+    action: 'Reviewed 20 words in Academic Vocabulary',
+    timestamp: new Date().toISOString(),
+  },
+];

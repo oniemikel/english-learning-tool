@@ -25,10 +25,18 @@ type RootLayoutProps = {
   children: ReactNode;
 };
 
+import { cn } from '@/lib/utils';
+
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={`${sans.variable} ${sansJp.variable} font-[var(--font-jp),var(--font-sans)] antialiased`}>
+      <body
+        className={cn(
+          'font-[var(--font-jp),var(--font-sans)] antialiased bg-background text-foreground',
+          sans.variable,
+          sansJp.variable,
+        )}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

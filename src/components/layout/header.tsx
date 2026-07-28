@@ -1,24 +1,28 @@
-import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
-import { UserNav } from './user-nav';
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { UserNav } from "./user-nav";
 
 const Header = async () => {
   const session = await auth();
-  // The middleware protects this page, so session and session.user should exist.
-  // We fetch the full user from the database to ensure we have the latest data.
+
+  // Middlewareで認証済みなので、最新のユーザー情報をDBから取得
   const user = session?.user
     ? await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { name: true, email: true, image: true },
+        select: {
+          displayName: true,
+          email: true,
+          avatarUrl: true,
+        },
       })
     : null;
 
-  // We create a user object that matches the Session['user'] type expected by UserNav
+  // UserNavが期待する形式へ変換
   const displayUser = user
     ? {
-        name: user.name,
+        name: user.displayName,
         email: user.email,
-        image: user.image,
+        image: user.avatarUrl,
       }
     : null;
 
@@ -35,4 +39,3 @@ const Header = async () => {
 };
 
 export default Header;
-

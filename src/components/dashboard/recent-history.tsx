@@ -1,46 +1,43 @@
-'use client';
-
-import { useQuery } from '@tanstack/react-query';
+// src/components/dashboard/recent-history.tsx
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { listHistory } from '@/lib/mock-api';
-import { formatDate } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
+import { ReviewRating } from '@prisma/client';
 
 type RecentHistoryProps = {
+  history: {
+    word: string;
+    rating: ReviewRating;
+    reviewedAt: Date;
+  }[];
   className?: string;
 };
 
-export function RecentHistory({ className }: RecentHistoryProps) {
-  const historyQuery = useQuery({ queryKey: ['history'], queryFn: () => listHistory({ limit: 5 }) });
-
+export default function RecentHistory({
+  history,
+  className,
+}: RecentHistoryProps) {
   return (
     <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>Recent History</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {historyQuery.isLoading
-          ? Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="space-y-2 rounded-[var(--radius-control)] border p-3">
-                <div className="flex items-center justify-between">
-                  <div className="h-5 w-2/5 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700"></div>
-                  <div className="h-5 w-1/5 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700"></div>
-                </div>
-                <div className="h-4 w-full animate-pulse rounded-md bg-gray-200 dark:bg-gray-700"></div>
+        {history.length > 0 ? (
+          history.map((item, index) => (
+            <div key={index} className="rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <p className="font-medium">{item.word}</p>
+                <Badge variant="secondary">{item.rating}</Badge>
               </div>
-            ))
-          : historyQuery.data?.map((history) => (
-              <div key={history.id} className="rounded-[var(--radius-control)] border p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">{history.deckName}</p>
-                  <Badge variant="secondary">{history.mode}</Badge>
-                </div>
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  {history.solved} cards / Accuracy {history.accuracy}% / {formatDate(history.createdAt)}
-                </p>
-              </div>
-            ))}
+              <p className="mt-1 text-xs text-gray-500">
+                {formatDate(item.reviewedAt)}
+              </p>
+            </div>
+          ))
+        ) : (
+          <p className="text-center text-sm text-gray-500">No history yet.</p>
+        )}
       </CardContent>
     </Card>
   );

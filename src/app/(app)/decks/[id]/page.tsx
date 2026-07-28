@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PageTitle } from '@/components/ui/page-title';
-import { getDeckById, listWords } from '@/lib/mock-api';
+import { getDeckDetails } from '@/lib/data/decks';
+import { listWords } from '@/lib/data/words';
 import { StatCard } from '@/components/ui/stat-card';
 import { Book, Check, Globe, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +29,7 @@ export default function DeckDetailPage() {
 
   const deckQuery = useQuery({
     queryKey: ['deck', id],
-    queryFn: () => getDeckById(id),
+    queryFn: () => getDeckDetails(id),
     enabled: !!id,
   });
 

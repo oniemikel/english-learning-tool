@@ -1,68 +1,119 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { PageTitle } from '@/components/ui/page-title';
-import { useStudyStore } from '@/stores/study-store';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useEffect } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { Button } from "@/components/ui/button";
+import { PageTitle } from "@/components/ui/page-title";
+import { useStudyStore } from "@/stores/study-store";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const studyStartSchema = z.object({
-  mode: z.enum(['en-ja', 'ja-en', 'listening', 'pronunciation']),
-  newLimit: z.coerce.number().int().min(0).max(100),
-  reviewLimit: z.coerce.number().int().min(0).max(200),
+  mode: z.enum(["en-ja", "ja-en", "listening", "pronunciation"]),
+  newLimit: z.number().int().min(0).max(100),
+  reviewLimit: z.number().int().min(0).max(200),
 });
 
 type StudyStartValues = z.infer<typeof studyStartSchema>;
 
-const modePathMap: Record<StudyStartValues['mode'], string> = {
-  'en-ja': '/study/en-ja',
-  'ja-en': '/study/ja-en',
-  listening: '/study/listening',
-  pronunciation: '/study/pronunciation',
+const modePathMap: Record<StudyStartValues["mode"], string> = {
+  "en-ja": "/study/en-ja",
+  "ja-en": "/study/ja-en",
+  listening: "/study/listening",
+  pronunciation: "/study/pronunciation",
 };
 
 export default function StudyStartPage() {
   const searchParams = useSearchParams();
-  const store = useStudyStore();
-  const deckId = searchParams.get('deckId') ?? store.deckId;
+
+  const deckId = searchParams.get("deckId");
+
+  const deckIdInStore = useStudyStore((s) => s.deckId);
+  const modeStore = useStudyStore((s) => s.mode);
+  const newLimitStore = useStudyStore((s) => s.newLimit);
+  const reviewLimitStore = useStudyStore((s) => s.reviewLimit);
+
+  const setDeckId = useStudyStore((s) => s.setDeckId);
+  const setMode = useStudyStore((s) => s.setMode);
+  const setNewLimit = useStudyStore((s) => s.setNewLimit);
+  const setReviewLimit = useStudyStore((s) => s.setReviewLimit);
+
+  const currentDeckId = deckId ?? deckIdInStore;
 
   const form = useForm<StudyStartValues>({
     resolver: zodResolver(studyStartSchema),
     defaultValues: {
-      mode: store.mode,
-      newLimit: store.newLimit,
-      reviewLimit: store.reviewLimit,
+      mode: modeStore,
+      newLimit: newLimitStore,
+      reviewLimit: reviewLimitStore,
     },
   });
 
-  const mode = form.watch('mode');
-  const { newLimit, reviewLimit } = form.watch();
+  const mode = form.watch("mode");
+  const newLimit = form.watch("newLimit");
+  const reviewLimit = form.watch("reviewLimit");
 
-  // Update store on form change
-  store.setDeckId(deckId);
-  store.setMode(mode);
-  store.setNewLimit(newLimit);
-  store.setReviewLimit(reviewLimit);
+  useEffect(() => {
+    setDeckId(currentDeckId);
+  }, [currentDeckId, setDeckId]);
+
+  useEffect(() => {
+    setMode(mode);
+  }, [mode, setMode]);
+
+  useEffect(() => {
+    setNewLimit(newLimit);
+  }, [newLimit, setNewLimit]);
+
+  useEffect(() => {
+    setReviewLimit(reviewLimit);
+  }, [reviewLimit, setReviewLimit]);
 
   return (
     <section>
-      <PageTitle title="Start Study Session" description="Choose your deck and mode to begin." />
+      <PageTitle
+        title="Start Study Session"
+        description="Choose your deck and mode to begin."
+      />
+
       <Form {...form}>
         <form>
           <Card className="mx-auto max-w-2xl">
             <CardHeader>
               <CardTitle>Session Settings</CardTitle>
+
               <CardDescription>
-                You are studying deck: <span className="font-semibold">{deckId}</span>
+                You are studying deck:
+                <span className="ml-1 font-semibold">{currentDeckId}</span>
               </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-6">
               <FormField
                 control={form.control}
@@ -70,19 +121,31 @@ export default function StudyStartPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Study Mode</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a study mode" />
+                          <SelectValue />
                         </SelectTrigger>
                       </FormControl>
+
                       <SelectContent>
-                        <SelectItem value="en-ja">English to Japanese</SelectItem>
-                        <SelectItem value="ja-en">Japanese to English</SelectItem>
-                        <SelectItem value="listening">Listening Practice</SelectItem>
-                        <SelectItem value="pronunciation">Pronunciation Practice</SelectItem>
+                        <SelectItem value="en-ja">
+                          English → Japanese
+                        </SelectItem>
+
+                        <SelectItem value="ja-en">
+                          Japanese → English
+                        </SelectItem>
+
+                        <SelectItem value="listening">Listening</SelectItem>
+
+                        <SelectItem value="pronunciation">
+                          Pronunciation
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+
                     <FormMessage />
                   </FormItem>
                 )}
@@ -94,23 +157,46 @@ export default function StudyStartPage() {
                   name="newLimit"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>New Cards Limit</FormLabel>
+                      <FormLabel>New Cards</FormLabel>
+
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input
+                          type="number"
+                          value={field.value}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                          onChange={(e) =>
+                            field.onChange(e.target.valueAsNumber)
+                          }
+                        />
                       </FormControl>
+
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name="reviewLimit"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Review Cards Limit</FormLabel>
+                      <FormLabel>Review Cards</FormLabel>
+
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input
+                          type="number"
+                          value={field.value}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                          onChange={(e) =>
+                            field.onChange(e.target.valueAsNumber)
+                          }
+                        />
                       </FormControl>
+
                       <FormMessage />
                     </FormItem>
                   )}

@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
 import { Textarea } from '@/components/ui/textarea';
-import { getWordById } from '@/lib/mock-api';
+import { getWordById, updateWord } from '@/lib/data/words';
 
 const editSchema = z.object({
   word: z.string().trim().min(1).max(100),
@@ -32,7 +32,7 @@ export default function WordDetailPage() {
 
   const form = useForm<EditValues>({
     resolver: zodResolver(editSchema),
-    values: {
+    defaultValues: {
       word: wordQuery.data?.word ?? '',
       translation: wordQuery.data?.translation ?? '',
       definition: wordQuery.data?.definition ?? '',
@@ -41,7 +41,7 @@ export default function WordDetailPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (values: EditValues) => values,
+    mutationFn: async (values: EditValues) => updateWord({ id, ...values }),
     onSuccess: () => router.push(`/words/${id}`),
   });
 

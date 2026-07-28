@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { PageTitle } from '@/components/ui/page-title';
-import { createDeck } from '@/lib/mock-api';
+import { createDeck } from '@/lib/data/decks';
 import { DeckForm, DeckFormValues } from '@/components/decks/deck-form';
 
 export default function DeckCreatePage() {

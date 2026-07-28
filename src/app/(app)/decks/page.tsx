@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
-import { listDecks } from '@/lib/mock-api';
+import { listDecks, deleteDeck } from '@/lib/data/decks';
 import { useDebounce } from '@/hooks/use-debounce';
 import { DeckCard } from '@/components/decks/deck-card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,20 +20,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import type { Deck } from '@/lib/mock-data';
 import { PlusSquare } from 'lucide-react';
-
-// Mock delete function
-const deleteDeck = async (id: string) => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  console.log(`Deleted deck with id: ${id}`);
-  return { id };
-};
 
 export default function DecksPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
+  const [selectedDeck, setSelectedDeck] = useState<Awaited<ReturnType<typeof listDecks>>[number] | null>(null);
   const queryClient = useQueryClient();
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -52,7 +44,7 @@ export default function DecksPage() {
     },
   });
 
-  const handleDeleteClick = (deck: Deck) => {
+  const handleDeleteClick = (deck: Awaited<ReturnType<typeof listDecks>>[number]) => {
     setSelectedDeck(deck);
     setIsDeleteDialogOpen(true);
   };

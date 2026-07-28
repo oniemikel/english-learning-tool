@@ -3,16 +3,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { PageTitle } from '@/components/ui/page-title';
-import { getDeckById } from '@/lib/mock-api';
+import { getDeckById, updateDeck } from '@/lib/data/decks';
 import { DeckForm, DeckFormValues } from '@/components/decks/deck-form';
 import { Skeleton } from '@/components/ui/skeleton';
-
-// Mock update function
-const updateDeck = async ({ id, ...values }: DeckFormValues & { id: string }) => {
-  console.log('Updating deck', id, values);
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return { id, ...values };
-};
 
 export default function EditDeckPage() {
   const router = useRouter();

@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { StudySession } from '@/components/study/study-session';
 import { useStudyStore } from '@/stores/study-store';
-import { listWords } from '@/lib/mock-api';
+import { getStudySessionWords } from '@/lib/data/study';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StudyJaEnPage() {
@@ -11,9 +11,8 @@ export default function StudyJaEnPage() {
 
   const wordsQuery = useQuery({
     queryKey: ['study-session-words', { deckId, newLimit, reviewLimit }],
-    // TODO: In a real app, the API would return a mix of new and due words
-    // based on the limits. For mock, we'll just use the deckId and limit.
-    queryFn: () => listWords({ deckId, limit: newLimit + reviewLimit }),
+    queryFn: () => getStudySessionWords({ deckId, newLimit, reviewLimit }),
+    enabled: !!deckId,
   });
 
   if (wordsQuery.isLoading) {

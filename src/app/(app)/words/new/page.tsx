@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
 import { Select } from '@/components/ui/select';
-import { createWord, listDecks } from '@/lib/mock-api';
+import { createWord } from '@/lib/data/words';
+import { listDecks } from '@/lib/data/decks';
 
 const schema = z.object({
   word: z.string().trim().min(1, '英単語は必須です').max(100),
@@ -25,8 +27,7 @@ type FormValues = z.infer<typeof schema>;
 export default function WordCreatePage() {
   const router = useRouter();
   const params = useSearchParams();
-  const defaultDeckId = params.get('deckId') ?? 'deck-1';
-  const decksQuery = useQuery({ queryKey: ['decks'], queryFn: () => listDecks() });
+  const decksQuery = useQuery({ queryKey: ['decks'], queryFn: () => listDecks({}) });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -34,14 +35,56 @@ export default function WordCreatePage() {
       word: '',
       translation: '',
       partOfSpeech: 'OTHER',
-      deckId: defaultDeckId,
+      deckId: '',
     },
   });
+
+  useEffect(() => {
+    if (decksQuery.data) {
+      form.reset({
+        word: '',
+        translation: '',
+        partOfSpeech: 'OTHER',
+        deckId: params.get('deckId') || decksQuery.data?.[0]?.id || '',
+      });
+    }
+  }, [decksQuery.data, form, params]);
+
 
   const mutation = useMutation({
     mutationFn: createWord,
     onSuccess: (word) => router.push(`/words/${word.id}`),
   });
+
+  if (decksQuery.isLoading) {
+    return (
+      <section>
+        <PageTitle title="単語作成" description="必要最低限の入力で素早く単語を追加します。" />
+        <Card className="mx-auto max-w-2xl">
+          <CardHeader>
+            <CardTitle>単語情報</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-96 w-full" />
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
+
+  if (!decksQuery.data || decksQuery.data.length === 0) {
+    return (
+      <section>
+        <PageTitle title="単語作成" description="必要最低限の入力で素早く単語を追加します。" />
+        <div className="text-center">
+          <p>You need to create a deck first.</p>
+          <Link href="/decks/new">
+            <Button className="mt-4">Create Deck</Button>
+          </Link>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section>

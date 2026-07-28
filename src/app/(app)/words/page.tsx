@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
-import { listWords } from '@/lib/mock-api';
+import { listWords } from '@/lib/data/words';
 import { formatDate } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
 import {

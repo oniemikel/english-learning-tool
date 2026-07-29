@@ -46,7 +46,7 @@ export default function ReviewsWidget({
         </div>
       </CardContent>
       <div className="p-5 pt-0">
-        <Link href="/study" className="w-full">
+        <Link href="/study/quick-start" className="w-full">
           <Button className="w-full" size="lg">
             Start Studying
           </Button>

@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { PageTitle } from '@/components/ui/page-title';
 import { getDeckDetails } from '@/lib/data/decks';
@@ -25,6 +27,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function DeckDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const [pendingWordId, setPendingWordId] = useState<string | null>(null);
+  const [isNavigating, startNavigation] = useTransition();
   const id = params.id;
 
   const deckQuery = useQuery({
@@ -165,10 +169,18 @@ export default function DeckDetailPage() {
                 wordsQuery.data?.map((word) => (
                   <TableRow
                     key={word.id}
-                    onClick={() => router.push(`/words/${word.id}`)}
+                    onClick={() => {
+                      setPendingWordId(word.id);
+                      startNavigation(() => router.push(`/words/${word.id}`));
+                    }}
                     className="cursor-pointer"
                   >
-                    <TableCell className="font-medium">{word.word}</TableCell>
+                    <TableCell className="font-medium">
+                      <span className="inline-flex items-center gap-2">
+                        {word.word}
+                        {isNavigating && pendingWordId === word.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                      </span>
+                    </TableCell>
                     <TableCell>{word.translation}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">{word.partOfSpeech}</Badge>
@@ -181,6 +193,7 @@ export default function DeckDetailPage() {
           </Table>
         </CardContent>
       </Card>
+      {isNavigating ? <p className="mt-3 text-xs text-(--muted-foreground)">Opening word details...</p> : null}
     </section>
   );
 }

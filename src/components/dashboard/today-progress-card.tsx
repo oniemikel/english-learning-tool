@@ -10,9 +10,9 @@ interface TodayProgressCardProps {
 }
 
 const MiniStat = ({ value, label }: { value: string | number; label: string }) => (
-  <div className="flex flex-col items-center justify-center space-y-1 rounded-lg bg-gray-100/50 p-3">
+  <div className="flex flex-col items-center justify-center space-y-1 rounded-lg bg-muted/50 p-3">
     <p className="text-lg font-bold">{value}</p>
-    <p className="text-xs text-gray-500">{label}</p>
+    <p className="text-xs text-muted-foreground">{label}</p>
   </div>
 );
 
@@ -32,9 +32,9 @@ const TodayProgressCard = ({
             <CardTitle className="text-lg font-semibold">
               Today's Progress
             </CardTitle>
-            <p className="text-sm text-gray-500">Daily learning activity</p>
+            <p className="text-sm text-muted-foreground">Daily learning activity</p>
           </div>
-          <p className="text-sm font-mono text-gray-500">
+          <p className="text-sm font-mono text-muted-foreground">
             {today.toLocaleDateString('en-US', { weekday: 'long' })}
           </p>
         </div>
@@ -45,8 +45,8 @@ const TodayProgressCard = ({
           <div className="flex-1 space-y-4">
             <div>
               <div className="mb-1 flex justify-between text-sm">
-                <p className="text-gray-500">Reviews</p>
-                <p className="font-mono font-medium text-gray-800">
+                <p className="text-muted-foreground">Reviews</p>
+                <p className="font-mono font-medium text-foreground">
                   {reviews} / {target}
                 </p>
               </div>

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
+import { useTransition } from 'react';
 import { PageTitle } from '@/components/ui/page-title';
 import { getDeckById, updateDeck } from '@/lib/data/decks';
 import { DeckForm, DeckFormValues } from '@/components/decks/deck-form';
@@ -9,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function EditDeckPage() {
   const router = useRouter();
+  const [isPendingNavigation, startNavigation] = useTransition();
   const params = useParams<{ id: string }>();
   const id = params.id;
 
@@ -21,7 +23,7 @@ export default function EditDeckPage() {
   const mutation = useMutation({
     mutationFn: (values: DeckFormValues) => updateDeck({ ...values, id }),
     onSuccess: () => {
-      router.push(`/decks/${id}`);
+      startNavigation(() => router.push(`/decks/${id}`));
     },
   });
 
@@ -46,8 +48,9 @@ export default function EditDeckPage() {
       <DeckForm
         initialData={deckQuery.data}
         onSubmit={handleSubmit}
-        isSubmitting={mutation.isPending}
-        onCancel={() => router.push(`/decks/${id}`)}
+        isSubmitting={mutation.isPending || isPendingNavigation}
+        onCancel={() => startNavigation(() => router.push(`/decks/${id}`))}
+        cancelPending={isPendingNavigation}
       />
     </section>
   );

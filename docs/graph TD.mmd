@@ -1,0 +1,15 @@
+graph TD
+    A[User logs in] --> B[Redirect to /dashboard];
+    B --> C[Render AppShell layout];
+    C --> D[Render DashboardPage];
+    D -- reads --> E[Prisma data via server actions/modules];
+    E --> F[Render all dashboard widgets];
+
+    F --> G[User clicks Continue Study];
+    G --> H[Navigate to /study];
+
+    F --> I[User clicks a deck in Recent Decks];
+    I --> J[Navigate to /decks/:id];
+
+    F --> K[User clicks navigation link in Sidebar/Header];
+    K --> L[Navigate to words and settings pages];

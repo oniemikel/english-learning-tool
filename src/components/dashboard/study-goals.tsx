@@ -24,9 +24,9 @@ const StudyGoals = ({ goals }: StudyGoalsProps) => {
       <CardContent className="space-y-4">
         {goals.map((goal, index) => (
           <div key={index} className="space-y-1">
-            <div className="flex justify-between text-sm text-gray-500">
+            <div className="flex justify-between text-sm text-muted-foreground">
               <p>{goal.day}</p>
-              <p className="font-medium text-gray-800">{goal.progress}</p>
+              <p className="font-medium text-foreground">{goal.progress}</p>
             </div>
             <Progress value={(goal.progress / maxProgress) * 100} />
           </div>

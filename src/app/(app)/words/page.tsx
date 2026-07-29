@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useState, useTransition } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,8 @@ import { useRouter } from 'next/navigation';
 
 export default function WordsPage() {
   const [query, setQuery] = useState('');
+  const [pendingWordId, setPendingWordId] = useState<string | null>(null);
+  const [isNavigating, startNavigation] = useTransition();
   const debouncedQuery = useDebounce(query, 300);
   const router = useRouter();
 
@@ -108,10 +111,18 @@ export default function WordsPage() {
             wordsQuery.data?.map((word) => (
               <TableRow
                 key={word.id}
-                onClick={() => router.push(`/words/${word.id}`)}
+                onClick={() => {
+                  setPendingWordId(word.id);
+                  startNavigation(() => router.push(`/words/${word.id}`));
+                }}
                 className="cursor-pointer"
               >
-                <TableCell className="font-medium">{word.word}</TableCell>
+                <TableCell className="font-medium">
+                  <span className="inline-flex items-center gap-2">
+                    {word.word}
+                    {isNavigating && pendingWordId === word.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  </span>
+                </TableCell>
                 <TableCell>{word.translation}</TableCell>
                 <TableCell>
                   <Link
@@ -132,6 +143,9 @@ export default function WordsPage() {
           )}
         </TableBody>
       </Table>
+        {isNavigating ? (
+        <p className="mt-3 text-xs text-(--muted-foreground)">Opening word details...</p>
+        ) : null}
     </section>
   );
 }

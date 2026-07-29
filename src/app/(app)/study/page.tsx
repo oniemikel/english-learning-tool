@@ -34,6 +34,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+const STUDY_ORDER_STORAGE_KEY = "settings.studyOrder";
+
 const studyStartSchema = z.object({
   mode: z.enum(["en-ja", "ja-en", "listening", "pronunciation"]),
   newLimit: z.number().int().min(0).max(100),
@@ -68,11 +70,15 @@ export default function StudyStartPage() {
   const searchParams = useSearchParams();
 
   const deckId = searchParams.get("deck") ?? searchParams.get("deckId");
+  const source = searchParams.get('source');
+  const newLimitFromQuery = searchParams.get('newLimit');
+  const reviewLimitFromQuery = searchParams.get('reviewLimit');
 
   const deckIdInStore = useStudyStore((s) => s.deckId);
   const modeStore = useStudyStore((s) => s.mode);
   const newLimitStore = useStudyStore((s) => s.newLimit);
   const reviewLimitStore = useStudyStore((s) => s.reviewLimit);
+  const setOrder = useStudyStore((s) => s.setOrder);
 
   const setDeckId = useStudyStore((s) => s.setDeckId);
   const setMode = useStudyStore((s) => s.setMode);
@@ -81,18 +87,38 @@ export default function StudyStartPage() {
 
   const currentDeckId = deckId ?? deckIdInStore;
 
+  const parsedNewLimit = newLimitFromQuery !== null ? Number.parseInt(newLimitFromQuery, 10) : NaN;
+  const parsedReviewLimit = reviewLimitFromQuery !== null ? Number.parseInt(reviewLimitFromQuery, 10) : NaN;
+
+  const initialNewLimit = Number.isInteger(parsedNewLimit)
+    ? Math.min(100, Math.max(0, parsedNewLimit))
+    : newLimitStore;
+  const initialReviewLimit = Number.isInteger(parsedReviewLimit)
+    ? Math.min(200, Math.max(0, parsedReviewLimit))
+    : reviewLimitStore;
+
+  const resolvedInitialNewLimit =
+    source === 'dashboard' && initialNewLimit === 0 && initialReviewLimit === 0
+      ? 20
+      : initialNewLimit;
+  const resolvedInitialReviewLimit =
+    source === 'dashboard' && initialNewLimit === 0 && initialReviewLimit === 0
+      ? 100
+      : initialReviewLimit;
+
   const form = useForm<StudyStartValues>({
     resolver: zodResolver(studyStartSchema),
     defaultValues: {
       mode: modeStore,
-      newLimit: newLimitStore,
-      reviewLimit: reviewLimitStore,
+      newLimit: resolvedInitialNewLimit,
+      reviewLimit: resolvedInitialReviewLimit,
     },
   });
 
   const mode = form.watch("mode");
   const newLimit = form.watch("newLimit");
   const reviewLimit = form.watch("reviewLimit");
+  const hasAnyCardLimit = newLimit > 0 || reviewLimit > 0;
 
   useEffect(() => {
     setDeckId(currentDeckId);
@@ -109,6 +135,13 @@ export default function StudyStartPage() {
   useEffect(() => {
     setReviewLimit(reviewLimit);
   }, [reviewLimit, setReviewLimit]);
+
+  useEffect(() => {
+    const order = localStorage.getItem(STUDY_ORDER_STORAGE_KEY);
+    if (order === "DUE_ASC" || order === "RANDOM" || order === "CREATED_DESC") {
+      setOrder(order);
+    }
+  }, [setOrder]);
 
   return (
     <section>
@@ -226,11 +259,17 @@ export default function StudyStartPage() {
 
               <div className="flex justify-end">
                 <Link href={createStudyUrl(mode, currentDeckId, newLimit, reviewLimit)} passHref>
-                  <Button size="lg" disabled={!currentDeckId}>
+                  <Button size="lg" disabled={!currentDeckId || !hasAnyCardLimit}>
                     Start Session
                   </Button>
                 </Link>
               </div>
+
+              {!hasAnyCardLimit ? (
+                <p className="text-sm text-muted-foreground">
+                  Set at least one of New Cards or Review Cards above 0 to start a session.
+                </p>
+              ) : null}
             </CardContent>
           </Card>
         </form>

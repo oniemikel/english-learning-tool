@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { GradeButtons } from './grade-buttons';
 
 type StudyCard = {
@@ -43,7 +44,12 @@ export function Flashcard({
         <p className="text-3xl font-semibold tracking-tight">{promptValue}</p>
 
         {showAnswer && (
-          <div className="space-y-4 rounded-lg bg-accent p-4 text-accent-foreground">
+          <div
+            className={cn(
+              'space-y-4 rounded-lg bg-accent p-4 text-accent-foreground shadow-sm',
+              'animate-[ui-flip-in_240ms_cubic-bezier(0.22,1,0.36,1)]',
+            )}
+          >
             <p className="text-lg font-semibold">
               {answerLabel}: {answerValue}
             </p>

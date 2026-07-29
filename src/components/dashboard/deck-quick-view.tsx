@@ -32,11 +32,11 @@ export default function DeckQuickView({
             <Link
               key={deck.id}
               href={`/decks/${deck.id}`}
-              className="block rounded-lg border p-3 hover:bg-gray-50"
+              className="block rounded-lg border p-3 transition-colors hover:bg-muted/50"
             >
               <div className="flex items-center justify-between">
                 <p className="font-medium">{deck.title}</p>
-                <div className="flex items-center text-sm text-gray-500">
+                <div className="flex items-center text-sm text-muted-foreground">
                   <Icons.Words className="mr-2 h-4 w-4" />
                   {deck.wordCount} words
                 </div>
@@ -44,9 +44,9 @@ export default function DeckQuickView({
             </Link>
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 py-12 text-center">
+          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-12 text-center">
             <h4 className="text-lg font-semibold">No decks yet</h4>
-            <p className="mb-4 text-sm text-gray-500">
+            <p className="mb-4 text-sm text-muted-foreground">
               Create your first deck to start studying.
             </p>
             <Link href="/decks/new" className={buttonVariants()}>

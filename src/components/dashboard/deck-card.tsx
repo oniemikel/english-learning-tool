@@ -16,13 +16,13 @@ interface DeckCardProps {
 
 const DeckCard = ({ id, title, wordCount }: DeckCardProps) => {
   return (
-    <Link href={`/decks/${id}`} className="block hover:bg-gray-50">
+    <Link href={`/decks/${id}`} className="block rounded-lg transition-colors hover:bg-muted/50">
       <Card className="flex h-full flex-col">
         <CardHeader>
           <CardTitle className="text-base font-semibold">{title}</CardTitle>
         </CardHeader>
         <CardContent className="flex-1">
-          <div className="flex items-center text-sm text-gray-500">
+          <div className="flex items-center text-sm text-muted-foreground">
             <Icons.Words className="mr-2 h-4 w-4" />
             {wordCount} words
           </div>

@@ -30,13 +30,13 @@ export default function RecentHistory({
                 <p className="font-medium">{item.word}</p>
                 <Badge variant="secondary">{item.rating}</Badge>
               </div>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {formatDate(item.reviewedAt)}
               </p>
             </div>
           ))
         ) : (
-          <p className="text-center text-sm text-gray-500">No history yet.</p>
+          <p className="text-center text-sm text-muted-foreground">No history yet.</p>
         )}
       </CardContent>
     </Card>

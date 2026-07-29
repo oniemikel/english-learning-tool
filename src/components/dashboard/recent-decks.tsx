@@ -35,9 +35,9 @@ const RecentDecks = ({ decks }: RecentDecksProps) => {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 py-12 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-12 text-center">
           <h4 className="text-lg font-semibold">No decks yet</h4>
-          <p className="mb-4 text-sm text-gray-500">
+          <p className="mb-4 text-sm text-muted-foreground">
             Create your first deck to start studying.
           </p>
           <Button asChild>

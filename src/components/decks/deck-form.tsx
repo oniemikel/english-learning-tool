@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ type DeckFormProps = {
   isSubmitting: boolean;
   onCancel: () => void;
   submitButtonText?: string;
+  cancelPending?: boolean;
 };
 
 export function DeckForm({
@@ -33,6 +35,7 @@ export function DeckForm({
   isSubmitting,
   onCancel,
   submitButtonText = 'Save',
+  cancelPending = false,
 }: DeckFormProps) {
   const form = useForm<DeckFormValues>({
     resolver: zodResolver(deckSchema),
@@ -100,8 +103,9 @@ export function DeckForm({
               )}
             />
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
+              <Button type="button" variant="outline" onClick={onCancel} disabled={cancelPending || isSubmitting}>
+                {cancelPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {cancelPending ? 'Canceling...' : 'Cancel'}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Saving...' : submitButtonText}

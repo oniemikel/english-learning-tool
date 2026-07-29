@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
@@ -23,10 +24,26 @@ import {
 import { PlusSquare } from 'lucide-react';
 
 export default function DecksPage() {
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDeck, setSelectedDeck] = useState<Awaited<ReturnType<typeof listDecks>>[number] | null>(null);
+  const [showStartNotice, setShowStartNotice] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (searchParams.get('notice') !== 'select-deck-to-study') {
+      return;
+    }
+
+    setShowStartNotice(true);
+
+    const timeoutId = window.setTimeout(() => {
+      setShowStartNotice(false);
+    }, 5000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchParams]);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -57,6 +74,12 @@ export default function DecksPage() {
 
   return (
     <>
+      {showStartNotice ? (
+        <div className="fixed right-4 top-4 z-50 w-full max-w-sm rounded-lg border bg-card p-4 shadow-lg">
+          <p className="text-sm font-medium">Please select a deck to start studying.</p>
+        </div>
+      ) : null}
+
       <section>
         <PageTitle title="Decks" description="Create, search, and manage your word decks." />
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/ui/page-title";
 import { useStudyStore } from "@/stores/study-store";
@@ -10,29 +10,32 @@ import { saveStudySession } from "@/lib/data/history";
 import { CheckCircle, Target, XCircle } from "lucide-react";
 
 export default function StudyResultPage() {
-  const { deckId, mode, solved, correct, startTime, reset } = useStudyStore();
+  const { deckId, mode, solved, correct, startTime, resetProgress } =
+    useStudyStore();
+  const hasSavedRef = useRef(false);
 
   useEffect(() => {
-    if (solved > 0 && startTime > 0) {
-      const minutes = Math.round((Date.now() - startTime) / 1000 / 60);
-      saveStudySession({
-        deckId,
-        mode,
-        solved,
-        correct,
-        minutes,
-      })
-        .then(() => {
-          console.log("Study log saved successfully.");
-        })
-        .catch((error) => {
-          console.error("Failed to save study log:", error);
-        })
-        .finally(() => {
-          reset();
-        });
+    if (hasSavedRef.current || solved === 0 || startTime === 0) {
+      return;
     }
-  }, [deckId, mode, solved, correct, startTime, reset]);
+
+    hasSavedRef.current = true;
+    const minutes = Math.round((Date.now() - startTime) / 1000 / 60);
+
+    void saveStudySession({
+      deckId,
+      mode,
+      solved,
+      correct,
+      minutes,
+    })
+      .then(() => {
+        console.log("Study log saved successfully.");
+      })
+      .catch((error) => {
+        console.error("Failed to save study log:", error);
+      });
+  }, [deckId, mode, solved, correct, startTime]);
 
   const accuracy = solved === 0 ? 0 : Math.round((correct / solved) * 100);
 
@@ -77,13 +80,17 @@ export default function StudyResultPage() {
       </div>
       <div className="mt-6 flex flex-wrap justify-end gap-2">
         <Link href="/study">
-          <Button variant="outline">Study Again</Button>
+          <Button variant="outline" onClick={resetProgress}>
+            Study Again
+          </Button>
         </Link>
         <Link href="/history">
-          <Button variant="secondary">View History</Button>
+          <Button variant="secondary" onClick={resetProgress}>
+            View History
+          </Button>
         </Link>
         <Link href="/dashboard">
-          <Button>Back to Dashboard</Button>
+          <Button onClick={resetProgress}>Back to Dashboard</Button>
         </Link>
       </div>
     </section>

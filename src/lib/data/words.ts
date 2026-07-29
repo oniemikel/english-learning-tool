@@ -102,6 +102,8 @@ const CreateWordSchema = z.object({
   translation: z.string().trim().min(1).max(500),
   partOfSpeech: z.string().min(1),
   deckId: z.string().min(1),
+  definition: z.string().trim().max(2000).optional(),
+  example: z.string().trim().max(2000).optional(),
 });
 
 export async function createWord(input: unknown) {
@@ -132,8 +134,18 @@ export async function createWord(input: unknown) {
         word: data.word,
         meaning: data.translation,
         partOfSpeech: data.partOfSpeech,
+        memo: data.definition || null,
       },
     });
+
+    if (data.example) {
+      await tx.exampleSentence.create({
+        data: {
+          wordId: word.id,
+          english: data.example,
+        },
+      });
+    }
 
     const card = await tx.card.create({
       data: {
@@ -190,6 +202,7 @@ export async function getWordById(id: string) {
 
   return {
     id: word.id,
+    deckId: word.deckId,
     word: word.word,
     translation: word.meaning,
     definition: word.memo ?? '',
@@ -206,6 +219,8 @@ const UpdateWordSchema = z.object({
   id: z.string(),
   word: z.string().trim().min(1).max(100),
   translation: z.string().trim().min(1).max(500),
+  partOfSpeech: z.string().min(1),
+  deckId: z.string().min(1),
   definition: z.string().max(2000),
   example: z.string().max(2000),
 });
@@ -236,13 +251,27 @@ export async function updateWord(input: unknown) {
     throw new Error("Word not found or you don't have permission to update it.");
   }
 
+  const targetDeck = await prisma.deck.findFirst({
+    where: {
+      id: data.deckId,
+      userId,
+      deletedAt: null,
+    },
+  });
+
+  if (!targetDeck) {
+    throw new Error("Deck not found or you don't have permission to move this word.");
+  }
+
   await prisma.word.update({
     where: {
       id: data.id,
     },
     data: {
+      deckId: data.deckId,
       word: data.word,
       meaning: data.translation,
+      partOfSpeech: data.partOfSpeech,
       memo: data.definition,
     },
   });

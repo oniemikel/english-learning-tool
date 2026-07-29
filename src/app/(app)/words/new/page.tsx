@@ -1,60 +1,29 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useTransition } from "react";
 
+import { WordForm, wordFormDefaultValues, type WordFormValues } from "@/components/words/word-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { PageTitle } from "@/components/ui/page-title";
-import { Select } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton"; // 1. Skeletonを追加
+import { Skeleton } from "@/components/ui/skeleton";
 import { listDecks } from "@/lib/data/decks";
 import { createWord } from "@/lib/data/words";
 
-const schema = z.object({
-  word: z.string().trim().min(1, "英単語は必須です").max(100),
-  translation: z.string().trim().min(1, "日本語訳は必須です").max(500),
-  partOfSpeech: z.string().min(1),
-  deckId: z.string().min(1),
-});
-
-type FormValues = z.infer<typeof schema>;
-
 export default function WordCreatePage() {
   const router = useRouter();
+  const [isPendingNavigation, startNavigation] = useTransition();
   const params = useSearchParams();
   const decksQuery = useQuery({
     queryKey: ["decks"],
     queryFn: () => listDecks({}),
   });
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      word: "",
-      translation: "",
-      partOfSpeech: "OTHER",
-      deckId: "",
-    },
-  });
-
-  // 2. デッキデータのロード完了時に1度だけ defaultValues/deckId を自動設定
-  useEffect(() => {
-    if (decksQuery.data && decksQuery.data.length > 0) {
-      const initialDeckId = params.get("deckId") || decksQuery.data[0].id;
-      form.setValue("deckId", initialDeckId);
-    }
-  }, [decksQuery.data, params, form]);
-
   const mutation = useMutation({
-    mutationFn: createWord,
-    onSuccess: (word) => router.push(`/words/${word.id}`),
+    mutationFn: (values: WordFormValues) => createWord(values),
+    onSuccess: (word) => startNavigation(() => router.push(`/words/${word.id}`)),
   });
 
   if (decksQuery.isLoading) {
@@ -62,16 +31,9 @@ export default function WordCreatePage() {
       <section>
         <PageTitle
           title="単語作成"
-          description="必要最低限の入力で素早く単語を追加します。"
+          description="単語の基本情報と詳細情報をまとめて登録できます。"
         />
-        <Card className="mx-auto max-w-2xl">
-          <CardHeader>
-            <CardTitle>単語情報</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-96 w-full" />
-          </CardContent>
-        </Card>
+        <Skeleton className="mx-auto h-96 w-full max-w-2xl" />
       </section>
     );
   }
@@ -81,7 +43,7 @@ export default function WordCreatePage() {
       <section>
         <PageTitle
           title="単語作成"
-          description="必要最低限の入力で素早く単語を追加します。"
+          description="単語の基本情報と詳細情報をまとめて登録できます。"
         />
         <div className="text-center">
           <p>You need to create a deck first.</p>
@@ -97,68 +59,21 @@ export default function WordCreatePage() {
     <section>
       <PageTitle
         title="単語作成"
-        description="必要最低限の入力で素早く単語を追加します。"
+        description="単語の基本情報と詳細情報をまとめて登録できます。"
       />
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader>
-          <CardTitle>単語情報</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="space-y-4"
-            onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-          >
-            <label className="block space-y-1">
-              <span className="text-sm">英単語</span>
-              <Input {...form.register("word")} />
-              <p className="text-xs text-[var(--destructive)]">
-                {form.formState.errors.word?.message}
-              </p>
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-sm">日本語訳</span>
-              <Input {...form.register("translation")} />
-              <p className="text-xs text-[var(--destructive)]">
-                {form.formState.errors.translation?.message}
-              </p>
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-sm">品詞</span>
-              <Select {...form.register("partOfSpeech")}>
-                <option value="NOUN">NOUN</option>
-                <option value="VERB">VERB</option>
-                <option value="ADJECTIVE">ADJECTIVE</option>
-                <option value="ADVERB">ADVERB</option>
-                <option value="OTHER">OTHER</option>
-              </Select>
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-sm">デッキ</span>
-              <Select {...form.register("deckId")}>
-                {decksQuery.data?.map((deck) => (
-                  <option key={deck.id} value={deck.id}>
-                    {deck.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
-
-            <div className="flex justify-end gap-2">
-              <Link href="/words">
-                <Button type="button" variant="outline">
-                  キャンセル
-                </Button>
-              </Link>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "作成中..." : "作成"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <WordForm
+        title="単語情報"
+        deckOptions={decksQuery.data}
+        initialData={{
+          ...wordFormDefaultValues,
+          deckId: params.get("deckId") || decksQuery.data[0].id,
+        }}
+        onSubmit={(values) => mutation.mutate(values)}
+        onCancel={() => startNavigation(() => router.push("/words"))}
+        isSubmitting={mutation.isPending || isPendingNavigation}
+        submitButtonText="作成"
+        cancelPending={isPendingNavigation}
+      />
     </section>
   );
 }

@@ -29,13 +29,13 @@ const CircularProgress = ({ value, color }: CircularProgressProps) => {
             stroke="none"
           >
             <Cell fill={color} />
-            <Cell fill="#e8e8ee" />
+            <Cell fill="hsl(var(--muted))" />
           </Pie>
         </PieChart>
       </ResponsiveContainer>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-xl font-bold">{value}%</span>
-        <span className="text-xs text-gray-500">done</span>
+        <span className="text-xs text-muted-foreground">done</span>
       </div>
     </div>
   );

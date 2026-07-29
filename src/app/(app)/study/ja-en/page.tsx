@@ -9,13 +9,20 @@ import { getStudySessionWords } from '@/lib/data/study';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
+const isInputMethodParam = (value: string | null): value is 'SELF_EVALUATION' | 'TYPING' => {
+  return value === 'SELF_EVALUATION' || value === 'TYPING';
+};
+
 export default function StudyJaEnPage() {
   const searchParams = useSearchParams();
   const deckIdInStore = useStudyStore((state) => state.deckId);
   const newLimitInStore = useStudyStore((state) => state.newLimit);
   const reviewLimitInStore = useStudyStore((state) => state.reviewLimit);
   const orderInStore = useStudyStore((state) => state.order);
+  const inputMethodInStore = useStudyStore((state) => state.inputMethod);
   const setDeckId = useStudyStore((state) => state.setDeckId);
+  const setMode = useStudyStore((state) => state.setMode);
+  const setInputMethod = useStudyStore((state) => state.setInputMethod);
   const setNewLimit = useStudyStore((state) => state.setNewLimit);
   const setReviewLimit = useStudyStore((state) => state.setReviewLimit);
 
@@ -25,6 +32,7 @@ export default function StudyJaEnPage() {
     searchParams.get('reviewLimit') ?? '',
     10,
   );
+  const inputMethodFromQuery = searchParams.get('inputMethod');
 
   const deckId = deckIdFromQuery ?? deckIdInStore;
   const newLimit = Number.isInteger(parsedNewLimit)
@@ -33,7 +41,18 @@ export default function StudyJaEnPage() {
   const reviewLimit = Number.isInteger(parsedReviewLimit)
     ? Math.min(200, Math.max(0, parsedReviewLimit))
     : reviewLimitInStore;
+  const inputMethod = isInputMethodParam(inputMethodFromQuery)
+    ? inputMethodFromQuery
+    : inputMethodInStore;
   const order = orderInStore;
+
+  useEffect(() => {
+    setMode('ja-en');
+  }, [setMode]);
+
+  useEffect(() => {
+    setInputMethod(inputMethod);
+  }, [inputMethod, setInputMethod]);
 
   useEffect(() => {
     if (deckIdFromQuery && deckIdFromQuery !== deckIdInStore) {

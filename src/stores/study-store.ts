@@ -2,12 +2,26 @@
 
 import { create } from 'zustand';
 
-type StudyMode = 'en-ja' | 'ja-en' | 'listening' | 'pronunciation';
-type StudyOrder = 'DUE_ASC' | 'RANDOM' | 'CREATED_DESC';
+export type StudyMode = 'en-ja' | 'ja-en' | 'listening' | 'pronunciation';
+export type StudyOrder = 'DUE_ASC' | 'RANDOM' | 'CREATED_DESC';
+export type StudyInputMethod = 'SELF_EVALUATION' | 'TYPING';
+
+export function getEffectiveInputMethod(mode: StudyMode, requested: StudyInputMethod): StudyInputMethod {
+  if (mode === 'en-ja') {
+    return 'SELF_EVALUATION';
+  }
+
+  if (mode === 'ja-en') {
+    return requested;
+  }
+
+  return 'SELF_EVALUATION';
+}
 
 type StudyStore = {
   deckId: string;
   mode: StudyMode;
+  inputMethod: StudyInputMethod;
   newLimit: number;
   reviewLimit: number;
   order: StudyOrder;
@@ -16,6 +30,7 @@ type StudyStore = {
   startTime: number;
   setDeckId: (deckId: string) => void;
   setMode: (mode: StudyMode) => void;
+  setInputMethod: (inputMethod: StudyInputMethod) => void;
   setNewLimit: (limit: number) => void;
   setReviewLimit: (limit: number) => void;
   setOrder: (order: StudyOrder) => void;
@@ -28,6 +43,7 @@ type StudyStore = {
 const initial = {
   deckId: '',
   mode: 'en-ja' as StudyMode,
+  inputMethod: 'SELF_EVALUATION' as StudyInputMethod,
   newLimit: 20,
   reviewLimit: 100,
   order: 'DUE_ASC' as StudyOrder,
@@ -39,7 +55,15 @@ const initial = {
 export const useStudyStore = create<StudyStore>((set) => ({
   ...initial,
   setDeckId: (deckId) => set({ deckId }),
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) =>
+    set((state) => ({
+      mode,
+      inputMethod: getEffectiveInputMethod(mode, state.inputMethod),
+    })),
+  setInputMethod: (inputMethod) =>
+    set((state) => ({
+      inputMethod: getEffectiveInputMethod(state.mode, inputMethod),
+    })),
   setNewLimit: (newLimit) => set({ newLimit }),
   setReviewLimit: (reviewLimit) => set({ reviewLimit }),
   setOrder: (order) => set({ order }),

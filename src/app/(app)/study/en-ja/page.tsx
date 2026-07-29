@@ -16,6 +16,8 @@ export default function StudyEnJaPage() {
   const reviewLimitInStore = useStudyStore((state) => state.reviewLimit);
   const orderInStore = useStudyStore((state) => state.order);
   const setDeckId = useStudyStore((state) => state.setDeckId);
+  const setMode = useStudyStore((state) => state.setMode);
+  const setInputMethod = useStudyStore((state) => state.setInputMethod);
   const setNewLimit = useStudyStore((state) => state.setNewLimit);
   const setReviewLimit = useStudyStore((state) => state.setReviewLimit);
 
@@ -34,6 +36,11 @@ export default function StudyEnJaPage() {
     ? Math.min(200, Math.max(0, parsedReviewLimit))
     : reviewLimitInStore;
   const order = orderInStore;
+
+  useEffect(() => {
+    setMode('en-ja');
+    setInputMethod('SELF_EVALUATION');
+  }, [setInputMethod, setMode]);
 
   useEffect(() => {
     if (deckIdFromQuery && deckIdFromQuery !== deckIdInStore) {

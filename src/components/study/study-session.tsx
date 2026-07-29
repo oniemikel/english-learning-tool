@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { submitStudyReview } from '@/lib/data/study';
-import { useStudyStore } from '@/stores/study-store';
+import { getEffectiveInputMethod, useStudyStore } from '@/stores/study-store';
 import { Flashcard } from './flashcard';
 
 type StudyCard = {
@@ -33,6 +33,7 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
   const solved = useStudyStore((state) => state.solved);
   const answer = useStudyStore((state) => state.answer);
   const start = useStudyStore((state) => state.start);
+  const inputMethod = useStudyStore((state) => state.inputMethod);
 
   const reviewMutation = useMutation({
     mutationFn: submitStudyReview,
@@ -88,11 +89,25 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
 
   const promptLabel = mode === 'ja-en' ? 'Japanese' : 'English';
   const answerLabel = mode === 'ja-en' ? 'English' : 'Japanese';
+  const effectiveInputMethod = getEffectiveInputMethod(mode, inputMethod);
+  const directionLabel =
+    mode === 'ja-en'
+      ? 'Direction: JP -> EN'
+      : mode === 'en-ja'
+        ? 'Direction: EN -> JP'
+        : `Mode: ${title}`;
+  const methodLabel =
+    effectiveInputMethod === 'TYPING' ? 'Input: Typing' : 'Input: Self-Evaluation';
+  const useKeyboardRatingShortcuts = mode === 'en-ja' && effectiveInputMethod === 'SELF_EVALUATION';
 
   return (
     <section className="mx-auto max-w-3xl animate-[ui-fade-in_220ms_ease-out]">
       <div className="mb-5">
         <h1 className="text-2xl font-semibold">{title}</h1>
+        <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded-full border px-2 py-1">{directionLabel}</span>
+          <span className="rounded-full border px-2 py-1">{methodLabel}</span>
+        </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
           <div className="h-full bg-primary transition-[width] duration-300 ease-out" style={{ width: `${progressRate}%` }} />
         </div>
@@ -109,6 +124,8 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
           onGrade={handleGrade}
           promptLabel={promptLabel}
           answerLabel={answerLabel}
+          inputMethod={effectiveInputMethod}
+          enableKeyboardRatingShortcuts={useKeyboardRatingShortcuts}
         />
       </div>
 

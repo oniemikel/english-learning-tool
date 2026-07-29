@@ -3,11 +3,15 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Word } from '@/lib/mock-data';
 import { GradeButtons } from './grade-buttons';
 
+type StudyCard = {
+  definition?: string;
+  example?: string;
+};
+
 type FlashcardProps = {
-  card: Word;
+  card: StudyCard;
   promptValue: string;
   answerValue: string;
   onGrade: (grade: 'again' | 'hard' | 'good' | 'easy') => void;

@@ -10,7 +10,7 @@ import { PageTitle } from '@/components/ui/page-title';
 
 export default function CsvImportPage() {
   const params = useSearchParams();
-  const deckId = params.get('deckId') ?? 'deck-1';
+  const deckId = params.get('deckId') ?? '';
   const [fileName, setFileName] = useState('');
 
   return (

@@ -2,9 +2,27 @@
 import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { DUMMY_USER, SIDEBAR_NAV_ITEMS } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { Icons, Icon } from '@/components/icons';
+
+const SIDEBAR_NAV_ITEMS = {
+  learn: [
+    { label: 'Dashboard', href: '/dashboard', icon: 'Dashboard' as const },
+    { label: 'My Decks', href: '/decks', icon: 'Decks' as const, badge: 0 },
+    { label: 'Vocabulary', href: '/words', icon: 'Vocabulary' as const },
+    { label: 'Progress', href: '/statistics', icon: 'Progress' as const },
+    { label: 'Goals', href: '/goals', icon: 'Goals' as const },
+    { label: 'Bookmarks', href: '/bookmarks', icon: 'Bookmarks' as const },
+  ],
+  account: [{ label: 'Settings', href: '/settings', icon: 'Settings' as const }],
+};
+
+const FALLBACK_USER = {
+  name: 'Learner',
+  email: 'learner@example.com',
+  avatar: 'LR',
+  streak: 0,
+};
 
 const Sidebar = () => {
   const pathname = '/dashboard'; // Mock pathname
@@ -39,7 +57,7 @@ const Sidebar = () => {
                 >
                   <Icon name={item.icon} className="h-4 w-4" />
                   <span>{item.label}</span>
-                  {item.badge && (
+                  {item.badge !== undefined && item.badge > 0 && (
                     <Badge className="ml-auto bg-gray-700 text-gray-300">
                       {item.badge}
                     </Badge>
@@ -77,16 +95,16 @@ const Sidebar = () => {
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-[#5b5bd6] text-white">
-              {DUMMY_USER.avatar}
+              {FALLBACK_USER.avatar}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <p className="text-sm font-semibold">{DUMMY_USER.name}</p>
-            <p className="text-xs text-gray-400">{DUMMY_USER.email}</p>
+            <p className="text-sm font-semibold">{FALLBACK_USER.name}</p>
+            <p className="text-xs text-gray-400">{FALLBACK_USER.email}</p>
           </div>
           <div className="flex items-center gap-1 text-yellow-400">
             <Icons.Streak className="h-4 w-4" />
-            <span className="text-sm font-bold">{DUMMY_USER.streak}</span>
+            <span className="text-sm font-bold">{FALLBACK_USER.streak}</span>
           </div>
         </div>
       </div>

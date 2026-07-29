@@ -1,7 +1,6 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import { prisma } from '@/lib/prisma';
-import { uuidv7 } from '@/lib/uuidv7';
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   providers: [Google],
@@ -21,7 +20,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (emailMatch && emailMatch.providerAccountId !== account.providerAccountId) return false;
       await prisma.user.create({
         data: {
-          id: uuidv7(),
           email: user.email,
           authProvider: 'GOOGLE',
           providerAccountId: account.providerAccountId,

@@ -1,23 +1,25 @@
-'use client';
+"use client";
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { PageTitle } from '@/components/ui/page-title';
-import { Select } from '@/components/ui/select';
-import { createWord } from '@/lib/data/words';
-import { listDecks } from '@/lib/data/decks';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { PageTitle } from "@/components/ui/page-title";
+import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton"; // 1. Skeletonを追加
+import { listDecks } from "@/lib/data/decks";
+import { createWord } from "@/lib/data/words";
 
 const schema = z.object({
-  word: z.string().trim().min(1, '英単語は必須です').max(100),
-  translation: z.string().trim().min(1, '日本語訳は必須です').max(500),
+  word: z.string().trim().min(1, "英単語は必須です").max(100),
+  translation: z.string().trim().min(1, "日本語訳は必須です").max(500),
   partOfSpeech: z.string().min(1),
   deckId: z.string().min(1),
 });
@@ -27,29 +29,28 @@ type FormValues = z.infer<typeof schema>;
 export default function WordCreatePage() {
   const router = useRouter();
   const params = useSearchParams();
-  const decksQuery = useQuery({ queryKey: ['decks'], queryFn: () => listDecks({}) });
+  const decksQuery = useQuery({
+    queryKey: ["decks"],
+    queryFn: () => listDecks({}),
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      word: '',
-      translation: '',
-      partOfSpeech: 'OTHER',
-      deckId: '',
+      word: "",
+      translation: "",
+      partOfSpeech: "OTHER",
+      deckId: "",
     },
   });
 
+  // 2. デッキデータのロード完了時に1度だけ defaultValues/deckId を自動設定
   useEffect(() => {
-    if (decksQuery.data) {
-      form.reset({
-        word: '',
-        translation: '',
-        partOfSpeech: 'OTHER',
-        deckId: params.get('deckId') || decksQuery.data?.[0]?.id || '',
-      });
+    if (decksQuery.data && decksQuery.data.length > 0) {
+      const initialDeckId = params.get("deckId") || decksQuery.data[0].id;
+      form.setValue("deckId", initialDeckId);
     }
-  }, [decksQuery.data, form, params]);
-
+  }, [decksQuery.data, params, form]);
 
   const mutation = useMutation({
     mutationFn: createWord,
@@ -59,7 +60,10 @@ export default function WordCreatePage() {
   if (decksQuery.isLoading) {
     return (
       <section>
-        <PageTitle title="単語作成" description="必要最低限の入力で素早く単語を追加します。" />
+        <PageTitle
+          title="単語作成"
+          description="必要最低限の入力で素早く単語を追加します。"
+        />
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
             <CardTitle>単語情報</CardTitle>
@@ -75,7 +79,10 @@ export default function WordCreatePage() {
   if (!decksQuery.data || decksQuery.data.length === 0) {
     return (
       <section>
-        <PageTitle title="単語作成" description="必要最低限の入力で素早く単語を追加します。" />
+        <PageTitle
+          title="単語作成"
+          description="必要最低限の入力で素早く単語を追加します。"
+        />
         <div className="text-center">
           <p>You need to create a deck first.</p>
           <Link href="/decks/new">
@@ -83,33 +90,43 @@ export default function WordCreatePage() {
           </Link>
         </div>
       </section>
-    )
+    );
   }
 
   return (
     <section>
-      <PageTitle title="単語作成" description="必要最低限の入力で素早く単語を追加します。" />
+      <PageTitle
+        title="単語作成"
+        description="必要最低限の入力で素早く単語を追加します。"
+      />
       <Card className="mx-auto max-w-2xl">
         <CardHeader>
           <CardTitle>単語情報</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+          <form
+            className="space-y-4"
+            onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+          >
             <label className="block space-y-1">
               <span className="text-sm">英単語</span>
-              <Input {...form.register('word')} />
-              <p className="text-xs text-[var(--destructive)]">{form.formState.errors.word?.message}</p>
+              <Input {...form.register("word")} />
+              <p className="text-xs text-[var(--destructive)]">
+                {form.formState.errors.word?.message}
+              </p>
             </label>
 
             <label className="block space-y-1">
               <span className="text-sm">日本語訳</span>
-              <Input {...form.register('translation')} />
-              <p className="text-xs text-[var(--destructive)]">{form.formState.errors.translation?.message}</p>
+              <Input {...form.register("translation")} />
+              <p className="text-xs text-[var(--destructive)]">
+                {form.formState.errors.translation?.message}
+              </p>
             </label>
 
             <label className="block space-y-1">
               <span className="text-sm">品詞</span>
-              <Select {...form.register('partOfSpeech')}>
+              <Select {...form.register("partOfSpeech")}>
                 <option value="NOUN">NOUN</option>
                 <option value="VERB">VERB</option>
                 <option value="ADJECTIVE">ADJECTIVE</option>
@@ -120,7 +137,7 @@ export default function WordCreatePage() {
 
             <label className="block space-y-1">
               <span className="text-sm">デッキ</span>
-              <Select {...form.register('deckId')}>
+              <Select {...form.register("deckId")}>
                 {decksQuery.data?.map((deck) => (
                   <option key={deck.id} value={deck.id}>
                     {deck.name}
@@ -135,7 +152,9 @@ export default function WordCreatePage() {
                   キャンセル
                 </Button>
               </Link>
-              <Button type="submit">作成</Button>
+              <Button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending ? "作成中..." : "作成"}
+              </Button>
             </div>
           </form>
         </CardContent>

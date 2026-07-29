@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
-import { getDeckById, listWords } from '@/lib/mock-api';
+import { clonePublicDeck, getPublicDeckById } from '@/lib/data/decks';
+import { listPublicWords } from '@/lib/data/words';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,13 +34,13 @@ export default function PublicDeckDetailPage() {
 
   const deckQuery = useQuery({
     queryKey: ['public-deck', id],
-    queryFn: () => getDeckById(id),
+    queryFn: () => getPublicDeckById(id),
     enabled: !!id,
   });
 
   const wordsQuery = useQuery({
     queryKey: ['words', { deckId: id }],
-    queryFn: () => listWords({ deckId: id, limit: 10 }),
+    queryFn: () => listPublicWords({ deckId: id, limit: 10 }),
     enabled: !!id,
   });
 
@@ -51,11 +52,13 @@ export default function PublicDeckDetailPage() {
   });
 
   const cloneMutation = useMutation({
-    mutationFn: async (values: CloneFormValues) => values,
+    mutationFn: (values: CloneFormValues) =>
+      clonePublicDeck({
+        sourceDeckId: id,
+        name: values.name,
+      }),
     onSuccess: (data) => {
-      // Assuming clone creates a new deck and returns its id
-      // For mock, we'll just redirect to the main decks page
-      router.push('/decks');
+      router.push(`/decks/${data.id}`);
     },
   });
 

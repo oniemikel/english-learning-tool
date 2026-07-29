@@ -3,11 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageTitle } from '@/components/ui/page-title';
-import { listHistory } from '@/lib/mock-api';
+import { getStudyHistory } from '@/lib/data/history';
 import { formatDate } from '@/lib/utils';
 
 export default function HistoryPage() {
-  const historyQuery = useQuery({ queryKey: ['history'], queryFn: () => listHistory() });
+  const historyQuery = useQuery({ queryKey: ['history'], queryFn: () => getStudyHistory() });
 
   return (
     <section>
@@ -24,7 +24,7 @@ export default function HistoryPage() {
                 <p className="text-xs text-[var(--muted-foreground)]">{item.mode}</p>
               </div>
               <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                {formatDate(item.createdAt)} / {item.solved}問 / 正答率{item.accuracy}% / {item.minutes}分
+                {formatDate(item.createdAt)} / {item.solved}問 / 正答率{Math.round(item.accuracy)}% / {item.minutes}分
               </p>
             </div>
           ))}

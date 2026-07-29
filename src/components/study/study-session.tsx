@@ -1,24 +1,39 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useStudyStore } from '@/stores/study-store';
-import type { Word } from '@/lib/mock-data';
 import { Flashcard } from './flashcard';
+
+type StudyCard = {
+  id: string;
+  deckId: string;
+  word: string;
+  translation: string;
+  definition?: string;
+  example?: string;
+};
 
 type StudySessionProps = {
   title: string;
-  cards: Word[];
+  cards: StudyCard[];
   mode: 'en-ja' | 'ja-en' | 'listening' | 'pronunciation';
 };
 
 export function StudySession({ title, cards, mode }: StudySessionProps) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const { solved, reset } = useStudyStore();
+  const { solved, start } = useStudyStore((state) => ({
+    solved: state.solved,
+    start: state.start,
+  }));
   const totalCards = cards.length;
   const progressRate = totalCards > 0 ? Math.min(100, Math.round((solved / totalCards) * 100)) : 0;
+
+  useEffect(() => {
+    start();
+  }, [start]);
 
   const handleEndSession = () => {
     router.push('/study/result');

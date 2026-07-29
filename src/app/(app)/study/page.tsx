@@ -49,10 +49,25 @@ const modePathMap: Record<StudyStartValues["mode"], string> = {
   pronunciation: "/study/pronunciation",
 };
 
+const createStudyUrl = (
+  mode: StudyStartValues["mode"],
+  deckId: string | null,
+  newLimit: number,
+  reviewLimit: number,
+) => {
+  const url = new URL(modePathMap[mode], "http://localhost"); // Base URL is dummy, only pathname and search are used
+  if (deckId) {
+    url.searchParams.set("deckId", deckId);
+  }
+  url.searchParams.set("newLimit", newLimit.toString());
+  url.searchParams.set("reviewLimit", reviewLimit.toString());
+  return url.pathname + url.search;
+};
+
 export default function StudyStartPage() {
   const searchParams = useSearchParams();
 
-  const deckId = searchParams.get("deckId");
+  const deckId = searchParams.get("deck") ?? searchParams.get("deckId");
 
   const deckIdInStore = useStudyStore((s) => s.deckId);
   const modeStore = useStudyStore((s) => s.mode);
@@ -109,8 +124,14 @@ export default function StudyStartPage() {
               <CardTitle>Session Settings</CardTitle>
 
               <CardDescription>
-                You are studying deck:
-                <span className="ml-1 font-semibold">{currentDeckId}</span>
+                {currentDeckId ? (
+                  <>
+                    You are studying deck:
+                    <span className="ml-1 font-semibold">{currentDeckId}</span>
+                  </>
+                ) : (
+                  "Please select a deck to start studying."
+                )}
               </CardDescription>
             </CardHeader>
 
@@ -204,8 +225,10 @@ export default function StudyStartPage() {
               </div>
 
               <div className="flex justify-end">
-                <Link href={modePathMap[mode]}>
-                  <Button size="lg">Start Session</Button>
+                <Link href={createStudyUrl(mode, currentDeckId, newLimit, reviewLimit)} passHref>
+                  <Button size="lg" disabled={!currentDeckId}>
+                    Start Session
+                  </Button>
                 </Link>
               </div>
             </CardContent>

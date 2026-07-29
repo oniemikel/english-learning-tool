@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id                String           @id @db.Char(36)
+  id                String           @id @default(uuid()) @db.Char(36)
   email             String           @unique @db.VarChar(255)
   displayName       String           @db.VarChar(100)
   avatarUrl         String?          @db.VarChar(500)
@@ -21,12 +21,13 @@ model User {
   decks             Deck[]
   reviewLogs        ReviewLog[]
   setting           UserSetting?
+  studyLogs         StudyLog[]
 
   @@map("User")
 }
 
 model UserSetting {
-  id             String   @id @db.Char(36)
+  id             String   @id @default(uuid()) @db.Char(36)
   userId         String   @unique @db.Char(36)
   dailyNewCards  Int      @default(20)
   maximumReviews Int      @default(200)
@@ -43,7 +44,7 @@ model UserSetting {
 }
 
 model Deck {
-  id          String    @id @db.Char(36)
+  id          String    @id @default(uuid()) @db.Char(36)
   userId      String    @db.Char(36)
   title       String    @db.VarChar(100)
   description String?   @db.Text
@@ -56,6 +57,7 @@ model Deck {
   deletedAt   DateTime?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   words       Word[]
+  studyLogs   StudyLog[]
 
   @@index([userId])
   @@index([userId, sortOrder])
@@ -63,7 +65,7 @@ model Deck {
 }
 
 model Word {
-  id               String            @id @db.Char(36)
+  id               String            @id @default(uuid()) @db.Char(36)
   deckId           String            @db.Char(36)
   word             String            @db.VarChar(150)
   pronunciation    String?           @db.VarChar(255)
@@ -90,7 +92,7 @@ model Word {
 }
 
 model ExampleSentence {
-  id        String    @id @db.Char(36)
+  id        String    @id @default(uuid()) @db.Char(36)
   wordId    String    @db.Char(36)
   english   String    @db.Text
   japanese  String?   @db.Text
@@ -106,7 +108,7 @@ model ExampleSentence {
 }
 
 model Synonym {
-  id          String    @id @db.Char(36)
+  id          String    @id @default(uuid()) @db.Char(36)
   wordId      String    @db.Char(36)
   value       String    @db.VarChar(150)
   explanation String?   @db.Text
@@ -122,7 +124,7 @@ model Synonym {
 }
 
 model Antonym {
-  id          String    @id @db.Char(36)
+  id          String    @id @default(uuid()) @db.Char(36)
   wordId      String    @db.Char(36)
   value       String    @db.VarChar(150)
   explanation String?   @db.Text
@@ -138,7 +140,7 @@ model Antonym {
 }
 
 model Collocation {
-  id        String    @id @db.Char(36)
+  id        String    @id @default(uuid()) @db.Char(36)
   wordId    String    @db.Char(36)
   phrase    String    @db.VarChar(255)
   meaning   String?   @db.Text
@@ -155,7 +157,7 @@ model Collocation {
 }
 
 model Card {
-  id            String      @id @db.Char(36)
+  id            String      @id @default(uuid()) @db.Char(36)
   wordId        String      @unique @db.Char(36)
   isSuspended   Boolean     @default(false)
   isStarred     Boolean     @default(false)
@@ -172,7 +174,7 @@ model Card {
 }
 
 model FSRSState {
-  id         String        @id @db.Char(36)
+  id         String        @id @default(uuid()) @db.Char(36)
   cardId     String        @unique @db.Char(36)
   state      FSRSStateType @default(NEW)
   stability  Float         @default(0)
@@ -191,7 +193,7 @@ model FSRSState {
 }
 
 model ReviewLog {
-  id           String       @id @db.Char(36)
+  id           String       @id @default(uuid()) @db.Char(36)
   userId       String       @db.Char(36)
   cardId       String       @db.Char(36)
   rating       ReviewRating
@@ -212,7 +214,7 @@ model ReviewLog {
 }
 
 model DailyStatistic {
-  id             String     @id @db.Char(36)
+  id             String     @id @default(uuid()) @db.Char(36)
   userId         String     @db.Char(36)
   date           DateTime
   reviewCount    Int        @default(0)
@@ -231,12 +233,38 @@ model DailyStatistic {
   @@map("DailyStatistic")
 }
 
+model StudyLog {
+  id        String    @id @default(uuid()) @db.Char(36)
+  userId    String    @db.Char(36)
+  deckId    String    @db.Char(36)
+  mode      StudyMode
+  solved    Int
+  correct   Int
+  accuracy  Float
+  minutes   Int
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck      Deck      @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deckId])
+  @@map("StudyLog")
+}
+
+enum StudyMode {
+  EN_JA
+  JA_EN
+  LISTENING
+  PRONUNCIATION
+}
+
 enum ReviewRating {
   AGAIN
   HARD
   GOOD
   EASY
 }
+
 
 enum FSRSStateType {
   NEW

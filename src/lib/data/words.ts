@@ -1,3 +1,4 @@
+'use server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -6,6 +7,7 @@ import { z } from 'zod';
 const ListWordsSchema = z.object({
   deckId: z.string().optional(),
   query: z.string().optional(),
+  limit: z.number().int().positive().max(200).optional(),
 });
 
 export async function listWords(input: unknown) {
@@ -15,19 +17,24 @@ export async function listWords(input: unknown) {
   }
   const userId = session.user.id;
 
-  const { deckId, query } = ListWordsSchema.parse(input);
+  const { deckId, query, limit } = ListWordsSchema.parse(input);
+  const trimmedQuery = query?.trim();
 
   const words = await prisma.word.findMany({
     where: {
-      deckId,
+      ...(deckId ? { deckId } : {}),
       deck: {
         userId,
       },
       deletedAt: null,
-      OR: [
-        { word: { contains: query } },
-        { meaning: { contains: query } },
-      ],
+      ...(trimmedQuery
+        ? {
+            OR: [
+              { word: { contains: trimmedQuery } },
+              { meaning: { contains: trimmedQuery } },
+            ],
+          }
+        : {}),
     },
     include: {
       deck: {
@@ -35,10 +42,16 @@ export async function listWords(input: unknown) {
           title: true,
         },
       },
+      card: {
+        include: {
+          fsrsState: true,
+        },
+      },
     },
     orderBy: {
       updatedAt: 'desc',
     },
+    take: limit,
   });
 
   return words.map((word) => ({
@@ -46,10 +59,41 @@ export async function listWords(input: unknown) {
     word: word.word,
     translation: word.meaning,
     partOfSpeech: word.partOfSpeech,
-    nextReview: new Date().toISOString(), // Placeholder
+    nextReview: word.card?.fsrsState?.due.toISOString() ?? null,
     deckId: word.deckId,
     deckName: word.deck.title,
     accuracy: 0, // Placeholder
+  }));
+}
+
+const ListPublicWordsSchema = z.object({
+  deckId: z.string().min(1),
+  limit: z.number().int().positive().max(200).optional(),
+});
+
+export async function listPublicWords(input: unknown) {
+  const { deckId, limit } = ListPublicWordsSchema.parse(input);
+
+  const words = await prisma.word.findMany({
+    where: {
+      deckId,
+      deletedAt: null,
+      deck: {
+        deletedAt: null,
+      },
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+    take: limit,
+  });
+
+  return words.map((word) => ({
+    id: word.id,
+    deckId: word.deckId,
+    word: word.word,
+    translation: word.meaning,
+    partOfSpeech: word.partOfSpeech,
   }));
 }
 
@@ -69,27 +113,43 @@ export async function createWord(input: unknown) {
 
   const data = CreateWordSchema.parse(input);
 
-  const newWord = await prisma.word.create({
-    data: {
-      deckId: data.deckId,
-      word: data.word,
-      meaning: data.translation,
-      partOfSpeech: data.partOfSpeech,
+  const deck = await prisma.deck.findFirst({
+    where: {
+      id: data.deckId,
+      userId,
+      deletedAt: null,
     },
   });
 
-  const newCard = await prisma.card.create({
-    data: {
-      wordId: newWord.id,
-    },
-  });
+  if (!deck) {
+    throw new Error("Deck not found or you don't have permission to add words.");
+  }
 
-  await prisma.fSRSState.create({
-    data: {
-      cardId: newCard.id,
-      state: 'NEW',
-      due: new Date(),
-    },
+  const newWord = await prisma.$transaction(async (tx) => {
+    const word = await tx.word.create({
+      data: {
+        deckId: data.deckId,
+        word: data.word,
+        meaning: data.translation,
+        partOfSpeech: data.partOfSpeech,
+      },
+    });
+
+    const card = await tx.card.create({
+      data: {
+        wordId: word.id,
+      },
+    });
+
+    await tx.fSRSState.create({
+      data: {
+        cardId: card.id,
+        state: 'NEW',
+        due: new Date(),
+      },
+    });
+
+    return word;
   });
 
   return newWord;
@@ -108,6 +168,7 @@ export async function getWordById(id: string) {
       deck: {
         userId,
       },
+      deletedAt: null,
     },
     include: {
       card: {
@@ -164,6 +225,7 @@ export async function updateWord(input: unknown) {
       deck: {
         userId,
       },
+      deletedAt: null,
     },
     include: {
       exampleSentences: true,

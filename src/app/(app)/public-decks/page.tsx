@@ -7,12 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PageTitle } from '@/components/ui/page-title';
-import { listDecks } from '@/lib/mock-api';
+import { listPublicDecks } from '@/lib/data/decks';
 
 export default function PublicDecksPage() {
   const [query, setQuery] = useState('');
-  const decksQuery = useQuery({ queryKey: ['public-decks', query], queryFn: () => listDecks({ query }) });
-  const publicDecks = decksQuery.data?.filter((deck) => deck.isPublic) ?? [];
+  const decksQuery = useQuery({ queryKey: ['public-decks', query], queryFn: () => listPublicDecks({ query }) });
+  const publicDecks = decksQuery.data ?? [];
 
   return (
     <section>

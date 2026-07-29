@@ -15,10 +15,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { Deck } from '@/lib/mock-data';
 import { Book, Check, MoreVertical, Plus } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+
+type Deck = {
+  id: string;
+  name: string;
+  description?: string | null;
+  dueCount: number;
+  newCount: number;
+  wordCount: number;
+};
 
 type DeckCardProps = {
   deck: Deck;

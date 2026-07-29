@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageTitle } from '@/components/ui/page-title';
-import { getStatistics } from '@/lib/mock-api';
+import { getStatistics } from '@/lib/data/dashboard';
 
 type Range = '7d' | '30d' | '90d';
 

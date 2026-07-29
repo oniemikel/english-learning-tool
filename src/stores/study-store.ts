@@ -11,21 +11,24 @@ type StudyStore = {
   reviewLimit: number;
   solved: number;
   correct: number;
+  startTime: number;
   setDeckId: (deckId: string) => void;
   setMode: (mode: StudyMode) => void;
   setNewLimit: (limit: number) => void;
   setReviewLimit: (limit: number) => void;
+  start: () => void;
   answer: (isCorrect: boolean) => void;
   reset: () => void;
 };
 
 const initial = {
-  deckId: 'deck-1',
+  deckId: '',
   mode: 'en-ja' as StudyMode,
   newLimit: 20,
   reviewLimit: 100,
   solved: 0,
   correct: 0,
+  startTime: 0,
 };
 
 export const useStudyStore = create<StudyStore>((set) => ({
@@ -34,6 +37,7 @@ export const useStudyStore = create<StudyStore>((set) => ({
   setMode: (mode) => set({ mode }),
   setNewLimit: (newLimit) => set({ newLimit }),
   setReviewLimit: (reviewLimit) => set({ reviewLimit }),
+  start: () => set({ startTime: Date.now() }),
   answer: (isCorrect) =>
     set((state) => ({
       solved: state.solved + 1,

@@ -20,7 +20,7 @@ export function GradeButtons({ onGrade }: GradeButtonsProps) {
       <Button variant="outline" className="flex-1" onClick={() => handleGrade('again', false)}>
         Again
       </Button>
-      <Button variant="outline" className="flex-1" onClick={() => handleGrade('hard', false)}>
+      <Button variant="outline" className="flex-1" onClick={() => handleGrade('hard', true)}>
         Hard
       </Button>
       <Button variant="outline" className="flex-1" onClick={() => handleGrade('good', true)}>

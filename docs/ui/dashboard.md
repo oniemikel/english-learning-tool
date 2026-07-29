@@ -34,7 +34,7 @@ The dashboard has been implemented with a component-based architecture using Nex
 - **`lucide-react`**: Used for all iconography, managed via `src/components/icons.tsx`.
 
 ## 5. State & Data
-- All data is currently mocked and sourced from **`src/lib/mock-data.ts`**. This includes user info, navigation items, and all statistics for the dashboard widgets.
+- Dashboard data is loaded from Prisma-backed server modules, primarily **`src/lib/dashboard-data.ts`** and **`src/lib/data/dashboard.ts`**.
 
 ## 6. Screen Flow / Navigation
 ```mermaid
@@ -42,15 +42,15 @@ graph TD
     A[User logs in] --> B[Redirect to /dashboard];
     B --> C[Render AppShell layout];
     C --> D[Render DashboardPage];
-    D -- reads --> E[Mock data from /src/lib/mock-data.ts];
+    D -- reads --> E[Prisma data via server actions/modules];
     E --> F[Render all dashboard widgets];
 
-    F --> G[User clicks "Continue Study"];
+    F --> G[User clicks Continue Study];
     G --> H[Navigate to /study];
 
-    F --> I[User clicks a deck in "Recent Decks"];
-    I --> J[Navigate to /decks/[id]];
+    F --> I[User clicks a deck in Recent Decks];
+    I --> J[Navigate to /decks/:id];
 
     F --> K[User clicks navigation link in Sidebar/Header];
-    K --> L[Navigate to other screens (e.g., /words, /settings)];
+    K --> L[Navigate to words and settings pages];
 ```

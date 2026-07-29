@@ -1,3 +1,4 @@
+'use server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -15,14 +16,19 @@ export async function listDecks(input: unknown) {
   const userId = session.user.id;
 
   const { query } = ListDecksSchema.parse(input);
+  const trimmedQuery = query?.trim();
 
   const decks = await prisma.deck.findMany({
     where: {
       userId,
       deletedAt: null,
-      title: {
-        contains: query,
-      },
+      ...(trimmedQuery
+        ? {
+            title: {
+              contains: trimmedQuery,
+            },
+          }
+        : {}),
     },
     include: {
       words: {
@@ -80,6 +86,52 @@ export async function listDecks(input: unknown) {
       progress,
     };
   });
+}
+
+const ListPublicDecksSchema = z.object({
+  query: z.string().optional(),
+  limit: z.number().int().positive().max(100).optional(),
+});
+
+export async function listPublicDecks(input: unknown = {}) {
+  const { query, limit } = ListPublicDecksSchema.parse(input);
+  const trimmedQuery = query?.trim();
+
+  const decks = await prisma.deck.findMany({
+    where: {
+      deletedAt: null,
+      ...(trimmedQuery
+        ? {
+            title: {
+              contains: trimmedQuery,
+            },
+          }
+        : {}),
+    },
+    include: {
+      words: {
+        where: {
+          deletedAt: null,
+        },
+      },
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+    take: limit,
+  });
+
+  return decks.map((deck) => ({
+    id: deck.id,
+    name: deck.title,
+    description: deck.description,
+    wordCount: deck.words.length,
+    isPublic: true,
+    updatedAt: deck.updatedAt.toISOString(),
+    dueCount: 0,
+    newCount: 0,
+    progress: 0,
+  }));
 }
 
 export async function deleteDeck(id: string) {
@@ -164,6 +216,38 @@ export async function getDeckById(id: string) {
     name: deck.title,
     description: deck.description ?? '',
     isPublic: false, // Placeholder
+  };
+}
+
+export async function getPublicDeckById(id: string) {
+  const deck = await prisma.deck.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+    },
+    include: {
+      _count: {
+        select: {
+          words: {
+            where: {
+              deletedAt: null,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!deck) {
+    return null;
+  }
+
+  return {
+    id: deck.id,
+    name: deck.title,
+    description: deck.description ?? '',
+    wordCount: deck._count.words,
+    isPublic: true,
   };
 }
 
@@ -267,5 +351,102 @@ export async function getDeckDetails(id: string) {
     newCount,
     dueCount,
     isPublic: false, // Placeholder
+  };
+}
+
+const ClonePublicDeckSchema = z.object({
+  sourceDeckId: z.string().min(1),
+  name: z.string().trim().min(1).max(100),
+});
+
+export async function clonePublicDeck(input: unknown) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('You must be signed in to clone a deck.');
+  }
+
+  const { sourceDeckId, name } = ClonePublicDeckSchema.parse(input);
+
+  const sourceDeck = await prisma.deck.findFirst({
+    where: {
+      id: sourceDeckId,
+      deletedAt: null,
+    },
+    include: {
+      words: {
+        where: {
+          deletedAt: null,
+        },
+        include: {
+          exampleSentences: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              sortOrder: 'asc',
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!sourceDeck) {
+    throw new Error('Source deck not found.');
+  }
+
+  const clonedDeck = await prisma.$transaction(async (tx) => {
+    const deck = await tx.deck.create({
+      data: {
+        userId: session.user.id,
+        title: name,
+        description: sourceDeck.description,
+      },
+    });
+
+    for (const sourceWord of sourceDeck.words) {
+      const word = await tx.word.create({
+        data: {
+          deckId: deck.id,
+          word: sourceWord.word,
+          pronunciation: sourceWord.pronunciation,
+          partOfSpeech: sourceWord.partOfSpeech,
+          meaning: sourceWord.meaning,
+          memo: sourceWord.memo,
+          source: sourceWord.source,
+        },
+      });
+
+      for (const sentence of sourceWord.exampleSentences) {
+        await tx.exampleSentence.create({
+          data: {
+            wordId: word.id,
+            english: sentence.english,
+            japanese: sentence.japanese,
+            sortOrder: sentence.sortOrder,
+          },
+        });
+      }
+
+      const card = await tx.card.create({
+        data: {
+          wordId: word.id,
+        },
+      });
+
+      await tx.fSRSState.create({
+        data: {
+          cardId: card.id,
+          state: 'NEW',
+          due: new Date(),
+        },
+      });
+    }
+
+    return deck;
+  });
+
+  return {
+    id: clonedDeck.id,
   };
 }

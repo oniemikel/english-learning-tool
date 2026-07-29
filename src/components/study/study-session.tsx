@@ -50,23 +50,27 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
     startTransition(() => router.push('/study/result'));
   };
 
-  const handleGrade = (grade: 'again' | 'hard' | 'good' | 'easy') => {
-    const gradedCard = cards[currentIndex];
-    answer(grade !== 'again');
+  const handleGrade = async (grade: 'again' | 'hard' | 'good' | 'easy') => {
+    if (reviewMutation.isPending || isPending) {
+      return;
+    }
 
-    void reviewMutation
-      .mutateAsync({
+    const gradedCard = cards[currentIndex];
+    try {
+      await reviewMutation.mutateAsync({
         cardId: gradedCard.cardId,
         rating: grade,
-      })
-      .catch((error) => {
-        console.error('Failed to save review:', error);
       });
 
-    if (currentIndex < totalCards - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      handleEndSession();
+      answer(grade !== 'again');
+
+      if (currentIndex < totalCards - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        handleEndSession();
+      }
+    } catch (error) {
+      console.error('Failed to save review:', error);
     }
   };
 

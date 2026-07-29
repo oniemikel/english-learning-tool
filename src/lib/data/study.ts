@@ -1,6 +1,7 @@
 'use server';
 
 import { ReviewMode, ReviewRating } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
@@ -508,6 +509,8 @@ export async function submitStudyReview(input: unknown) {
       state: updatedFsrs.state,
     };
   });
+
+  revalidatePath('/dashboard');
 
   return result;
 }

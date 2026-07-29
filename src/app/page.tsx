@@ -2,15 +2,14 @@
 
 import { Loader2, LogIn } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [isDemoNavigating, startDemoTransition] = useTransition();
+  const [isDemoSigningIn, startDemoTransition] = useTransition();
   const params = useSearchParams();
   const callbackUrl = params.get('callbackUrl') ?? '/dashboard';
 
@@ -34,11 +33,11 @@ export default function LoginPage() {
           <Button
             className="w-full"
             variant="outline"
-            disabled={isDemoNavigating}
-            onClick={() => startDemoTransition(() => router.push('/dashboard'))}
+            disabled={isDemoSigningIn}
+            onClick={() => startDemoTransition(() => void signIn('demo', { callbackUrl }))}
           >
-            {isDemoNavigating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {isDemoNavigating ? '移動中...' : 'デモデータで開始'}
+            {isDemoSigningIn ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {isDemoSigningIn ? 'ログイン中...' : 'デモデータで開始'}
           </Button>
           <p className="text-xs text-(--muted-foreground)">
             認証設定が未完了の環境では「デモデータで開始」を利用してください。

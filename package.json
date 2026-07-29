@@ -9,7 +9,11 @@
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy"
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -53,6 +57,7 @@
     "eslint-config-next": "16.2.12",
     "picocolors": "^1.1.1",
     "prisma": "^6.16.2",
+    "tsx": "^4.20.5",
     "typescript": "^5.8.3"
   }
 }

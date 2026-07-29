@@ -1,6 +1,6 @@
 'use server';
 
-import { ReviewMode, ReviewRating } from '@prisma/client';
+import { FSRSStateType, ReviewMode, ReviewRating } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -64,7 +64,7 @@ export async function resolveDashboardStudyStart() {
           is: {
             fsrsState: {
               is: {
-                state: 'NEW',
+                state: FSRSStateType.NEW,
               },
             },
           },
@@ -76,7 +76,11 @@ export async function resolveDashboardStudyStart() {
             fsrsState: {
               is: {
                 state: {
-                  in: ['LEARNING', 'REVIEW', 'RELEARNING'],
+                  in: [
+                    FSRSStateType.LEARNING,
+                    FSRSStateType.REVIEW,
+                    FSRSStateType.RELEARNING,
+                  ],
                 },
                 due: {
                   lte: now,
@@ -93,7 +97,11 @@ export async function resolveDashboardStudyStart() {
   const dueReviewCard = await prisma.fSRSState.findFirst({
     where: {
       state: {
-        in: ['LEARNING', 'REVIEW', 'RELEARNING'],
+        in: [
+          FSRSStateType.LEARNING,
+          FSRSStateType.REVIEW,
+          FSRSStateType.RELEARNING,
+        ],
       },
       due: {
         lte: now,
@@ -213,7 +221,7 @@ export async function getStudySessionWords(input: unknown) {
         await tx.fSRSState.create({
           data: {
             cardId: card.id,
-            state: 'NEW',
+            state: FSRSStateType.NEW,
             due: new Date(),
           },
         });
@@ -221,7 +229,7 @@ export async function getStudySessionWords(input: unknown) {
         await tx.fSRSState.create({
           data: {
             cardId: word.card.id,
-            state: 'NEW',
+            state: FSRSStateType.NEW,
             due: new Date(),
           },
         });
@@ -244,7 +252,7 @@ export async function getStudySessionWords(input: unknown) {
               deletedAt: null,
             },
             fsrsState: {
-              state: 'NEW',
+              state: FSRSStateType.NEW,
             },
           },
           take: newLimit,
@@ -278,7 +286,11 @@ export async function getStudySessionWords(input: unknown) {
             },
             fsrsState: {
               state: {
-                in: ['LEARNING', 'REVIEW', 'RELEARNING'],
+                in: [
+                  FSRSStateType.LEARNING,
+                  FSRSStateType.REVIEW,
+                  FSRSStateType.RELEARNING,
+                ],
               },
               due: {
                 lte: now,
@@ -323,7 +335,11 @@ export async function getStudySessionWords(input: unknown) {
         },
         fsrsState: {
           state: {
-            in: ['LEARNING', 'REVIEW', 'RELEARNING'],
+            in: [
+              FSRSStateType.LEARNING,
+              FSRSStateType.REVIEW,
+              FSRSStateType.RELEARNING,
+            ],
           },
         },
       },
@@ -425,13 +441,13 @@ export async function submitStudyReview(input: unknown) {
     let nextDifficulty = previousDifficulty;
     let nextStability = previousStability;
     let intervalDays = 1;
-    let nextState: 'LEARNING' | 'REVIEW' | 'RELEARNING' = 'REVIEW';
+    let nextState: FSRSStateType = FSRSStateType.REVIEW;
 
     if (rating === 'again') {
       nextDifficulty = clamp(previousDifficulty + 0.6, 1, 10);
       nextStability = clamp(previousStability * 0.5, 0.1, 36500);
       intervalDays = 1 / 32; // 45 minutes
-      nextState = 'RELEARNING';
+      nextState = FSRSStateType.RELEARNING;
     }
 
     if (rating === 'hard') {
@@ -442,7 +458,7 @@ export async function submitStudyReview(input: unknown) {
         36500,
       );
       intervalDays = Math.max(1, Math.round(nextStability * 0.6));
-      nextState = 'REVIEW';
+      nextState = FSRSStateType.REVIEW;
     }
 
     if (rating === 'good') {
@@ -453,7 +469,7 @@ export async function submitStudyReview(input: unknown) {
         36500,
       );
       intervalDays = Math.max(1, Math.round(nextStability));
-      nextState = 'REVIEW';
+      nextState = FSRSStateType.REVIEW;
     }
 
     if (rating === 'easy') {
@@ -464,7 +480,7 @@ export async function submitStudyReview(input: unknown) {
         36500,
       );
       intervalDays = Math.max(2, Math.round(nextStability * 1.5));
-      nextState = 'REVIEW';
+      nextState = FSRSStateType.REVIEW;
     }
 
     const due = new Date(now.getTime() + intervalDays * DAY_MS);

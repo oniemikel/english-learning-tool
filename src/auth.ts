@@ -1,12 +1,34 @@
 import NextAuth from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
+import { DEMO_USER_EMAIL, ensureDemoUserData } from '@/lib/demo-seed';
 import { prisma } from '@/lib/prisma';
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-  providers: [Google],
+  providers: [
+    Google,
+    Credentials({
+      id: 'demo',
+      name: 'Demo Login',
+      credentials: {},
+      async authorize() {
+        const demoUser = await ensureDemoUserData(prisma);
+        return {
+          id: demoUser.id,
+          email: demoUser.email,
+          name: demoUser.displayName,
+          image: demoUser.avatarUrl ?? undefined,
+        };
+      },
+    }),
+  ],
   session: { strategy: 'jwt', maxAge: 7 * 24 * 60 * 60 },
   callbacks: {
     async signIn({ user, account }) {
+      if (account?.provider === 'demo') {
+        return user.email === DEMO_USER_EMAIL;
+      }
+
       if (account?.provider !== 'google' || !user.email || !account.providerAccountId) return false;
       const existing = await prisma.user.findFirst({
         where: { providerAccountId: account.providerAccountId },
@@ -29,7 +51,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       });
       return true;
     },
-    async jwt({ token, account }) {
+    async jwt({ token, account, user }) {
+      if (typeof user?.id === 'string') {
+        token.userId = user.id;
+      }
+
       if (account?.provider === 'google' && account.providerAccountId) {
         const user = await prisma.user.findFirst({
           where: { providerAccountId: account.providerAccountId, deletedAt: null },

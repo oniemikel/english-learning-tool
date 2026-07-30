@@ -1,7 +1,9 @@
 // src/middleware.ts
-export { auth as middleware } from '@/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
 
-// See "Matching Paths" below to learn more
+export const { auth: middleware } = NextAuth(authConfig);
+
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

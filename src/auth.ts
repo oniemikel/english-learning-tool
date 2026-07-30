@@ -1,10 +1,13 @@
+// src/auth.ts
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
+import { authConfig } from './auth.config';
 import { DEMO_USER_EMAIL, ensureDemoUserData } from '@/lib/demo-seed';
 import { prisma } from '@/lib/prisma';
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     Google,
     Credentials({
@@ -22,8 +25,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: { strategy: 'jwt', maxAge: 7 * 24 * 60 * 60 },
   callbacks: {
+    ...authConfig.callbacks,
     async signIn({ user, account }) {
       if (account?.provider === 'demo') {
         return user.email === DEMO_USER_EMAIL;
@@ -57,11 +60,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
 
       if (account?.provider === 'google' && account.providerAccountId) {
-        const user = await prisma.user.findFirst({
+        const dbUser = await prisma.user.findFirst({
           where: { providerAccountId: account.providerAccountId, deletedAt: null },
           select: { id: true },
         });
-        const userId = user?.id;
+        const userId = dbUser?.id;
         if (userId) token.userId = userId;
       }
       return token;
@@ -70,22 +73,5 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (session.user && typeof token.userId === 'string') session.user.id = token.userId;
       return session;
     },
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isOnLoginPage = nextUrl.pathname === '/';
-
-      if (!isOnLoginPage && !isLoggedIn) {
-        const redirectUrl = new URL('/', nextUrl.origin);
-        redirectUrl.searchParams.append('callbackUrl', nextUrl.href);
-        return Response.redirect(redirectUrl);
-      }
-
-      if (isOnLoginPage && isLoggedIn) {
-        return Response.redirect(new URL('/dashboard', nextUrl.origin));
-      }
-
-      return true;
-    },
   },
-  pages: { signIn: '/' },
 });

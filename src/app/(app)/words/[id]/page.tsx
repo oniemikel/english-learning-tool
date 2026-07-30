@@ -51,6 +51,16 @@ export default function WordDetailPage() {
             <CardTitle>基本情報</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
+            <div>
+              <p className="mb-1 text-(--muted-foreground)">デッキ:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {wordQuery.data.decks.map((deck) => (
+                  <Link key={deck.id} href={`/decks/${deck.id}`}>
+                    <Badge variant="outline">{deck.name}</Badge>
+                  </Link>
+                ))}
+              </div>
+            </div>
             <p>
               <span className="text-(--muted-foreground)">品詞:</span> {wordQuery.data.partOfSpeech}
             </p>

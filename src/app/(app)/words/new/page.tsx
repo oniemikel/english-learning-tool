@@ -66,7 +66,7 @@ export default function WordCreatePage() {
         deckOptions={decksQuery.data}
         initialData={{
           ...wordFormDefaultValues,
-          deckId: params.get("deckId") || decksQuery.data[0].id,
+          deckIds: [params.get("deckId") || decksQuery.data[0].id],
         }}
         onSubmit={(values) => mutation.mutate(values)}
         onCancel={() => startNavigation(() => router.push("/words"))}

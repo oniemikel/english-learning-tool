@@ -23,7 +23,7 @@ export default function WordEditPage() {
   });
 
   if (wordQuery.isLoading || decksQuery.isLoading || !wordQuery.data) {
-    return <div className="rounded-(--radius-card) border bg-(--card) p-6">読み込み中またはデータが見つかりません。</div>;
+    return <div className="rounded-(--radius-card) border bg-(--card) p-6">Loading... (maybe not found)</div>;
   }
 
   if (!decksQuery.data || decksQuery.data.length === 0) {
@@ -50,7 +50,7 @@ export default function WordEditPage() {
           word: wordQuery.data.word,
           translation: wordQuery.data.translation,
           partOfSpeech: wordQuery.data.partOfSpeech ?? 'OTHER',
-          deckId: wordQuery.data.deckId,
+          deckIds: wordQuery.data.deckIds,
           definition: wordQuery.data.definition,
           example: wordQuery.data.example,
         }}

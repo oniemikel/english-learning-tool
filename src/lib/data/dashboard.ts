@@ -153,9 +153,11 @@ export async function getDashboardSummary() {
     }),
     prisma.word.count({
       where: {
-        deck: {
-          userId,
-          deletedAt: null,
+        decks: {
+          some: {
+            userId,
+            deletedAt: null,
+          },
         },
         deletedAt: null,
       },
@@ -167,9 +169,11 @@ export async function getDashboardSummary() {
         },
         card: {
           word: {
-            deck: {
-              userId,
-              deletedAt: null,
+            decks: {
+              some: {
+                userId,
+                deletedAt: null,
+              },
             },
             deletedAt: null,
           },
@@ -181,9 +185,11 @@ export async function getDashboardSummary() {
         state: 'NEW',
         card: {
           word: {
-            deck: {
-              userId,
-              deletedAt: null,
+            decks: {
+              some: {
+                userId,
+                deletedAt: null,
+              },
             },
             deletedAt: null,
           },

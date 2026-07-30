@@ -67,7 +67,6 @@ model Deck {
 
 model Word {
   id               String            @id @default(uuid()) @db.Char(36)
-  deckId           String            @db.Char(36)
   word             String            @db.VarChar(150)
   pronunciation    String?           @db.VarChar(255)
   partOfSpeech     String?           @db.VarChar(50)
@@ -83,10 +82,8 @@ model Word {
   collocations     Collocation[]
   exampleSentences ExampleSentence[]
   synonyms         Synonym[]
-  deck             Deck              @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  decks            Deck[]
 
-  @@unique([deckId, word])
-  @@index([deckId])
   @@index([word])
   @@index([partOfSpeech])
   @@map("Word")

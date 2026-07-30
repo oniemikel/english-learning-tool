@@ -22,9 +22,12 @@ export async function listWords(input: unknown) {
 
   const words = await prisma.word.findMany({
     where: {
-      ...(deckId ? { deckId } : {}),
-      deck: {
-        userId,
+      decks: {
+        some: {
+          userId,
+          deletedAt: null,
+          ...(deckId ? { id: deckId } : {}),
+        },
       },
       deletedAt: null,
       ...(trimmedQuery
@@ -37,8 +40,13 @@ export async function listWords(input: unknown) {
         : {}),
     },
     include: {
-      deck: {
+      decks: {
+        where: {
+          userId,
+          deletedAt: null,
+        },
         select: {
+          id: true,
           title: true,
         },
       },
@@ -60,8 +68,11 @@ export async function listWords(input: unknown) {
     translation: word.meaning,
     partOfSpeech: word.partOfSpeech,
     nextReview: word.card?.fsrsState?.due.toISOString() ?? null,
-    deckId: word.deckId,
-    deckName: word.deck.title,
+    deckIds: word.decks.map((deck) => deck.id),
+    decks: word.decks.map((deck) => ({
+      id: deck.id,
+      name: deck.title,
+    })),
     accuracy: 0, // Placeholder
   }));
 }
@@ -76,10 +87,24 @@ export async function listPublicWords(input: unknown) {
 
   const words = await prisma.word.findMany({
     where: {
-      deckId,
+      decks: {
+        some: {
+          id: deckId,
+          deletedAt: null,
+        },
+      },
       deletedAt: null,
-      deck: {
-        deletedAt: null,
+    },
+    include: {
+      decks: {
+        where: {
+          id: deckId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          title: true,
+        },
       },
     },
     orderBy: {
@@ -90,7 +115,11 @@ export async function listPublicWords(input: unknown) {
 
   return words.map((word) => ({
     id: word.id,
-    deckId: word.deckId,
+    deckIds: word.decks.map((deck) => deck.id),
+    decks: word.decks.map((deck) => ({
+      id: deck.id,
+      name: deck.title,
+    })),
     word: word.word,
     translation: word.meaning,
     partOfSpeech: word.partOfSpeech,
@@ -101,7 +130,7 @@ const CreateWordSchema = z.object({
   word: z.string().trim().min(1).max(100),
   translation: z.string().trim().min(1).max(500),
   partOfSpeech: z.string().min(1),
-  deckId: z.string().min(1),
+  deckIds: z.array(z.string().min(1)).min(1),
   definition: z.string().trim().max(2000).optional(),
   example: z.string().trim().max(2000).optional(),
 });
@@ -114,27 +143,35 @@ export async function createWord(input: unknown) {
   const userId = session.user.id;
 
   const data = CreateWordSchema.parse(input);
+  const uniqueDeckIds = Array.from(new Set(data.deckIds));
 
-  const deck = await prisma.deck.findFirst({
+  const decks = await prisma.deck.findMany({
     where: {
-      id: data.deckId,
+      id: {
+        in: uniqueDeckIds,
+      },
       userId,
       deletedAt: null,
     },
+    select: {
+      id: true,
+    },
   });
 
-  if (!deck) {
-    throw new Error("Deck not found or you don't have permission to add words.");
+  if (decks.length !== uniqueDeckIds.length) {
+    throw new Error("One or more decks were not found or you don't have permission to add words.");
   }
 
   const newWord = await prisma.$transaction(async (tx) => {
     const word = await tx.word.create({
       data: {
-        deckId: data.deckId,
         word: data.word,
         meaning: data.translation,
         partOfSpeech: data.partOfSpeech,
         memo: data.definition || null,
+        decks: {
+          connect: uniqueDeckIds.map((id) => ({ id })),
+        },
       },
     });
 
@@ -177,12 +214,25 @@ export async function getWordById(id: string) {
   const word = await prisma.word.findFirst({
     where: {
       id,
-      deck: {
-        userId,
+      decks: {
+        some: {
+          userId,
+          deletedAt: null,
+        },
       },
       deletedAt: null,
     },
     include: {
+      decks: {
+        where: {
+          userId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          title: true,
+        },
+      },
       card: {
         include: {
           fsrsState: true,
@@ -202,7 +252,11 @@ export async function getWordById(id: string) {
 
   return {
     id: word.id,
-    deckId: word.deckId,
+    deckIds: word.decks.map((deck) => deck.id),
+    decks: word.decks.map((deck) => ({
+      id: deck.id,
+      name: deck.title,
+    })),
     word: word.word,
     translation: word.meaning,
     definition: word.memo ?? '',
@@ -220,7 +274,7 @@ const UpdateWordSchema = z.object({
   word: z.string().trim().min(1).max(100),
   translation: z.string().trim().min(1).max(500),
   partOfSpeech: z.string().min(1),
-  deckId: z.string().min(1),
+  deckIds: z.array(z.string().min(1)).min(1),
   definition: z.string().max(2000),
   example: z.string().max(2000),
 });
@@ -233,12 +287,16 @@ export async function updateWord(input: unknown) {
   const userId = session.user.id;
 
   const data = UpdateWordSchema.parse(input);
+  const uniqueDeckIds = Array.from(new Set(data.deckIds));
 
   const word = await prisma.word.findFirst({
     where: {
       id: data.id,
-      deck: {
-        userId,
+      decks: {
+        some: {
+          userId,
+          deletedAt: null,
+        },
       },
       deletedAt: null,
     },
@@ -251,16 +309,21 @@ export async function updateWord(input: unknown) {
     throw new Error("Word not found or you don't have permission to update it.");
   }
 
-  const targetDeck = await prisma.deck.findFirst({
+  const targetDecks = await prisma.deck.findMany({
     where: {
-      id: data.deckId,
+      id: {
+        in: uniqueDeckIds,
+      },
       userId,
       deletedAt: null,
     },
+    select: {
+      id: true,
+    },
   });
 
-  if (!targetDeck) {
-    throw new Error("Deck not found or you don't have permission to move this word.");
+  if (targetDecks.length !== uniqueDeckIds.length) {
+    throw new Error("One or more decks were not found or you don't have permission to update this word.");
   }
 
   await prisma.word.update({
@@ -268,11 +331,13 @@ export async function updateWord(input: unknown) {
       id: data.id,
     },
     data: {
-      deckId: data.deckId,
       word: data.word,
       meaning: data.translation,
       partOfSpeech: data.partOfSpeech,
       memo: data.definition,
+      decks: {
+        set: uniqueDeckIds.map((id) => ({ id })),
+      },
     },
   });
 

@@ -118,17 +118,47 @@ export async function getDashboardPageData() {
     reviewsWidget,
   ] = await Promise.all([
     prisma.deck.count({ where: { userId, deletedAt: null } }),
-    prisma.word.count({ where: { deck: { userId }, deletedAt: null } }),
+    prisma.word.count({
+      where: {
+        deletedAt: null,
+        decks: {
+          some: {
+            userId,
+            deletedAt: null,
+          },
+        },
+      },
+    }),
     prisma.fSRSState.count({
       where: {
-        card: { word: { deck: { userId } } },
+        card: {
+          word: {
+            deletedAt: null,
+            decks: {
+              some: {
+                userId,
+                deletedAt: null,
+              },
+            },
+          },
+        },
         due: { lte: now },
         state: { not: 'NEW' },
       },
     }),
     prisma.fSRSState.count({
       where: {
-        card: { word: { deck: { userId } } },
+        card: {
+          word: {
+            deletedAt: null,
+            decks: {
+              some: {
+                userId,
+                deletedAt: null,
+              },
+            },
+          },
+        },
         state: 'NEW',
       },
     }),
@@ -241,13 +271,33 @@ async function getReviewsWidgetData(userId: string) {
   const [dueToday, dueSoon, overdue] = await Promise.all([
     prisma.fSRSState.count({
       where: {
-        card: { word: { deck: { userId } } },
+        card: {
+          word: {
+            deletedAt: null,
+            decks: {
+              some: {
+                userId,
+                deletedAt: null,
+              },
+            },
+          },
+        },
         due: { lte: now },
       },
     }),
     prisma.fSRSState.count({
       where: {
-        card: { word: { deck: { userId } } },
+        card: {
+          word: {
+            deletedAt: null,
+            decks: {
+              some: {
+                userId,
+                deletedAt: null,
+              },
+            },
+          },
+        },
         due: {
           gt: now,
           lte: sevenDaysFromNow,
@@ -256,7 +306,17 @@ async function getReviewsWidgetData(userId: string) {
     }),
     prisma.fSRSState.count({
       where: {
-        card: { word: { deck: { userId } } },
+        card: {
+          word: {
+            deletedAt: null,
+            decks: {
+              some: {
+                userId,
+                deletedAt: null,
+              },
+            },
+          },
+        },
         due: { lt: todayRange.start },
       },
     }),

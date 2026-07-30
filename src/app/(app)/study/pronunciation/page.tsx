@@ -22,7 +22,7 @@ export default function StudyPronunciationPage() {
           </p>
         </CardContent>
       </Card>
-      <div className="mt-6 flex flex-wrap justify-end gap-2">
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Link href={deckId ? `/decks/${deckId}` : '/decks'}>
           <Button variant="outline">Back to Deck</Button>
         </Link>

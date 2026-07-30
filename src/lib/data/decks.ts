@@ -323,7 +323,14 @@ export async function getDeckDetails(id: string) {
     where: {
       card: {
         word: {
-          deckId: id,
+          decks: {
+            some: {
+              id,
+              userId,
+              deletedAt: null,
+            },
+          },
+          deletedAt: null,
         },
       },
       state: 'NEW',
@@ -334,7 +341,14 @@ export async function getDeckDetails(id: string) {
     where: {
       card: {
         word: {
-          deckId: id,
+          decks: {
+            some: {
+              id,
+              userId,
+              deletedAt: null,
+            },
+          },
+          deletedAt: null,
         },
       },
       due: {
@@ -407,13 +421,17 @@ export async function clonePublicDeck(input: unknown) {
     for (const sourceWord of sourceDeck.words) {
       const word = await tx.word.create({
         data: {
-          deckId: deck.id,
           word: sourceWord.word,
           pronunciation: sourceWord.pronunciation,
           partOfSpeech: sourceWord.partOfSpeech,
           meaning: sourceWord.meaning,
           memo: sourceWord.memo,
           source: sourceWord.source,
+          decks: {
+            connect: {
+              id: deck.id,
+            },
+          },
         },
       });
 

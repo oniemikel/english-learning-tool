@@ -334,12 +334,16 @@ import type {
   
         const word = await prisma.word.create({
           data: {
-            deckId: deck.id,
             word: wordSeed.word,
             meaning: wordSeed.meaning,
             pronunciation: wordSeed.pronunciation,
             partOfSpeech: wordSeed.partOfSpeech,
             source: 'demo-seed',
+            decks: {
+              connect: {
+                id: deck.id,
+              },
+            },
             exampleSentences: {
               create: {
                 english: wordSeed.sentence,
@@ -519,7 +523,15 @@ import type {
   
     const [deckCount, wordCount, historyCount] = await Promise.all([
       prisma.deck.count({ where: { userId: user.id } }),
-      prisma.word.count({ where: { deck: { userId: user.id } } }),
+      prisma.word.count({
+        where: {
+          decks: {
+            some: {
+              userId: user.id,
+            },
+          },
+        },
+      }),
       prisma.dailyStatistic.count({ where: { userId: user.id } }),
     ]);
   

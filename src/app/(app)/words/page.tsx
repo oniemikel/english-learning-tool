@@ -60,7 +60,7 @@ export default function WordsPage() {
           <TableRow>
             <TableHead>Word</TableHead>
             <TableHead>Translation</TableHead>
-            <TableHead>Deck</TableHead>
+            <TableHead>Decks</TableHead>
             <TableHead>Part of Speech</TableHead>
             <TableHead>Accuracy</TableHead>
             <TableHead>Next Review</TableHead>
@@ -125,13 +125,18 @@ export default function WordsPage() {
                 </TableCell>
                 <TableCell>{word.translation}</TableCell>
                 <TableCell>
-                  <Link
-                    href={`/decks/${word.deckId}`}
-                    className="hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {word.deckName}
-                  </Link>
+                  <div className="flex flex-wrap gap-1.5">
+                    {word.decks.map((deck) => (
+                      <Link
+                        key={deck.id}
+                        href={`/decks/${deck.id}`}
+                        className="hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Badge variant="outline">{deck.name}</Badge>
+                      </Link>
+                    ))}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary">{word.partOfSpeech}</Badge>

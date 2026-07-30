@@ -132,10 +132,12 @@ export async function resolveDashboardStudyStart() {
       card: {
         word: {
           deletedAt: null,
-          deck: {
-            userId,
-            deletedAt: null,
-            isArchived: false,
+          decks: {
+            some: {
+              userId,
+              deletedAt: null,
+              isArchived: false,
+            },
           },
         },
       },
@@ -148,7 +150,17 @@ export async function resolveDashboardStudyStart() {
         select: {
           word: {
             select: {
-              deckId: true,
+              decks: {
+                where: {
+                  userId,
+                  deletedAt: null,
+                  isArchived: false,
+                },
+                select: {
+                  id: true,
+                },
+                take: 1,
+              },
             },
           },
         },
@@ -156,9 +168,10 @@ export async function resolveDashboardStudyStart() {
     },
   });
 
-  if (dueReviewCard?.card.word.deckId) {
+  const dueDeckId = dueReviewCard?.card.word.decks[0]?.id;
+  if (dueDeckId) {
     return {
-      deckId: dueReviewCard.card.word.deckId,
+      deckId: dueDeckId,
       reason: 'due-review' as const,
     };
   }
@@ -234,7 +247,16 @@ export async function getStudySessionWords(input: unknown) {
   // Self-healing: Ensure all words in the deck have cards and fsrsStates
   await prisma.$transaction(async (tx) => {
     const wordsInDeck = await tx.word.findMany({
-      where: { deckId, deletedAt: null },
+      where: {
+        deletedAt: null,
+        decks: {
+          some: {
+            id: deckId,
+            userId,
+            deletedAt: null,
+          },
+        },
+      },
       include: { card: { include: { fsrsState: true } } },
     });
 
@@ -268,11 +290,14 @@ export async function getStudySessionWords(input: unknown) {
       ? await prisma.card.findMany({
           where: {
             word: {
-              deckId,
-              deck: {
-                userId,
-              },
               deletedAt: null,
+              decks: {
+                some: {
+                  id: deckId,
+                  userId,
+                  deletedAt: null,
+                },
+              },
             },
             fsrsState: {
               state: FSRSStateType.NEW,
@@ -301,11 +326,14 @@ export async function getStudySessionWords(input: unknown) {
       ? await prisma.card.findMany({
           where: {
             word: {
-              deckId,
-              deck: {
-                userId,
-              },
               deletedAt: null,
+              decks: {
+                some: {
+                  id: deckId,
+                  userId,
+                  deletedAt: null,
+                },
+              },
             },
             fsrsState: {
               state: {
@@ -350,11 +378,14 @@ export async function getStudySessionWords(input: unknown) {
     const upcomingReviewCards = await prisma.card.findMany({
       where: {
         word: {
-          deckId,
-          deck: {
-            userId,
-          },
           deletedAt: null,
+          decks: {
+            some: {
+              id: deckId,
+              userId,
+              deletedAt: null,
+            },
+          },
         },
         fsrsState: {
           state: {
@@ -410,7 +441,7 @@ export async function getStudySessionWords(input: unknown) {
     .map((card) => ({
       id: card.word.id, // Keep word.id as id for component compatibility
       cardId: card.id,
-      deckId: card.word.deckId,
+      deckId,
       word: card.word.word,
       translation: card.word.meaning,
       partOfSpeech: card.word.partOfSpeech,
@@ -441,8 +472,11 @@ export async function submitStudyReview(input: unknown) {
         cardId,
         card: {
           word: {
-            deck: {
-              userId: session.user.id,
+            decks: {
+              some: {
+                userId: session.user.id,
+                deletedAt: null,
+              },
             },
           },
         },

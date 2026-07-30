@@ -13,6 +13,7 @@ const updateSettingsSchema = z.object({
   reviewLimit: z.number().int().min(0).max(500),
   theme: themeSchema,
   order: orderSchema,
+  allowTypingCorrectnessOverride: z.boolean(),
 });
 
 export type StudyOrder = z.infer<typeof orderSchema>;
@@ -30,28 +31,57 @@ const fromThemeEnum = (theme: Theme): ThemePreference => {
   return 'system';
 };
 
+const isTypingOverrideFieldError = (error: unknown) =>
+  error instanceof Error && error.message.includes('allowTypingCorrectnessOverride');
+
 export async function getUserSettings() {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('Unauthorized');
   }
 
-  const settings = await prisma.userSetting.findUnique({
-    where: { userId: session.user.id },
-    select: {
-      dailyNewCards: true,
-      maximumReviews: true,
-      theme: true,
-    },
-  });
+  try {
+    const settings = await prisma.userSetting.findUnique({
+      where: { userId: session.user.id },
+      select: {
+        dailyNewCards: true,
+        maximumReviews: true,
+        theme: true,
+        allowTypingCorrectnessOverride: true,
+      },
+    });
 
-  return {
-    newLimit: settings?.dailyNewCards ?? 20,
-    reviewLimit: settings?.maximumReviews ?? 100,
-    theme: settings ? fromThemeEnum(settings.theme) : 'system',
-    // Stored client-side for now because there is no DB field yet.
-    order: 'DUE_ASC' as StudyOrder,
-  };
+    return {
+      newLimit: settings?.dailyNewCards ?? 20,
+      reviewLimit: settings?.maximumReviews ?? 100,
+      theme: settings ? fromThemeEnum(settings.theme) : 'system',
+      allowTypingCorrectnessOverride: settings?.allowTypingCorrectnessOverride ?? true,
+      // Stored client-side for now because there is no DB field yet.
+      order: 'DUE_ASC' as StudyOrder,
+    };
+  } catch (error) {
+    if (!isTypingOverrideFieldError(error)) {
+      throw error;
+    }
+
+    const fallbackSettings = await prisma.userSetting.findUnique({
+      where: { userId: session.user.id },
+      select: {
+        dailyNewCards: true,
+        maximumReviews: true,
+        theme: true,
+      },
+    });
+
+    return {
+      newLimit: fallbackSettings?.dailyNewCards ?? 20,
+      reviewLimit: fallbackSettings?.maximumReviews ?? 100,
+      theme: fallbackSettings ? fromThemeEnum(fallbackSettings.theme) : 'system',
+      allowTypingCorrectnessOverride: true,
+      // Stored client-side for now because there is no DB field yet.
+      order: 'DUE_ASC' as StudyOrder,
+    };
+  }
 }
 
 export async function updateUserSettings(input: unknown) {
@@ -60,27 +90,51 @@ export async function updateUserSettings(input: unknown) {
     throw new Error('Unauthorized');
   }
 
-  const { newLimit, reviewLimit, theme, order } = updateSettingsSchema.parse(input);
+  const { newLimit, reviewLimit, theme, order, allowTypingCorrectnessOverride } = updateSettingsSchema.parse(input);
 
-  await prisma.userSetting.upsert({
-    where: { userId: session.user.id },
-    create: {
-      userId: session.user.id,
-      dailyNewCards: newLimit,
-      maximumReviews: reviewLimit,
-      theme: toThemeEnum(theme),
-    },
-    update: {
-      dailyNewCards: newLimit,
-      maximumReviews: reviewLimit,
-      theme: toThemeEnum(theme),
-    },
-  });
+  try {
+    await prisma.userSetting.upsert({
+      where: { userId: session.user.id },
+      create: {
+        userId: session.user.id,
+        dailyNewCards: newLimit,
+        maximumReviews: reviewLimit,
+        theme: toThemeEnum(theme),
+        allowTypingCorrectnessOverride,
+      },
+      update: {
+        dailyNewCards: newLimit,
+        maximumReviews: reviewLimit,
+        theme: toThemeEnum(theme),
+        allowTypingCorrectnessOverride,
+      },
+    });
+  } catch (error) {
+    if (!isTypingOverrideFieldError(error)) {
+      throw error;
+    }
+
+    await prisma.userSetting.upsert({
+      where: { userId: session.user.id },
+      create: {
+        userId: session.user.id,
+        dailyNewCards: newLimit,
+        maximumReviews: reviewLimit,
+        theme: toThemeEnum(theme),
+      },
+      update: {
+        dailyNewCards: newLimit,
+        maximumReviews: reviewLimit,
+        theme: toThemeEnum(theme),
+      },
+    });
+  }
 
   return {
     newLimit,
     reviewLimit,
     theme,
     order,
+    allowTypingCorrectnessOverride,
   };
 }

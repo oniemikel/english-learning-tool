@@ -7,12 +7,28 @@ import { PageTitle } from "@/components/ui/page-title";
 import { useStudyStore } from "@/stores/study-store";
 import { StatCard } from "@/components/ui/stat-card";
 import { saveStudySession } from "@/lib/data/history";
-import { CheckCircle, Target, XCircle } from "lucide-react";
+import { CheckCircle, Clock3, Target, XCircle } from "lucide-react";
+
+function formatDuration(totalMinutes: number) {
+  const safeMinutes = Math.max(0, totalMinutes);
+  const hours = Math.floor(safeMinutes / 60);
+  const minutes = safeMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}
 
 export default function StudyResultPage() {
-  const { deckId, mode, solved, correct, startTime, resetProgress } =
+  const { deckId, mode, solved, correct, ratingCounts, startTime, resetProgress } =
     useStudyStore();
   const hasSavedRef = useRef(false);
+
+  const incorrect = Math.max(0, solved - correct);
+  const accuracy = solved === 0 ? 0 : Math.round((correct / solved) * 100);
+  const minutes = startTime === 0 ? 0 : Math.max(1, Math.round((Date.now() - startTime) / 1000 / 60));
 
   useEffect(() => {
     if (hasSavedRef.current || solved === 0 || startTime === 0) {
@@ -20,13 +36,15 @@ export default function StudyResultPage() {
     }
 
     hasSavedRef.current = true;
-    const minutes = Math.round((Date.now() - startTime) / 1000 / 60);
 
     void saveStudySession({
       deckId,
       mode,
-      solved,
-      correct,
+      totalReviewed: solved,
+      correctCount: correct,
+      incorrectCount: incorrect,
+      accuracyRate: accuracy,
+      fsrsBreakdown: ratingCounts,
       minutes,
     })
       .then(() => {
@@ -35,13 +53,11 @@ export default function StudyResultPage() {
       .catch((error) => {
         console.error("Failed to save study log:", error);
       });
-  }, [deckId, mode, solved, correct, startTime]);
-
-  const accuracy = solved === 0 ? 0 : Math.round((correct / solved) * 100);
+  }, [deckId, mode, solved, correct, incorrect, accuracy, ratingCounts, minutes, startTime]);
 
   const stats = [
     {
-      title: "Total Solved",
+      title: "Total Words Reviewed",
       value: solved,
       icon: <CheckCircle className="h-5 w-5 text-muted-foreground" />,
     },
@@ -56,10 +72,22 @@ export default function StudyResultPage() {
       icon: <XCircle className="h-5 w-5 text-red-500" />,
     },
     {
-      title: "Accuracy",
+      title: "Accuracy Rate",
       value: `${accuracy}%`,
       icon: <Target className="h-5 w-5 text-muted-foreground" />,
     },
+    {
+      title: "Study Duration",
+      value: formatDuration(minutes),
+      icon: <Clock3 className="h-5 w-5 text-muted-foreground" />,
+    },
+  ];
+
+  const fsrsResponseStats = [
+    { label: "Again", value: ratingCounts.again },
+    { label: "Hard", value: ratingCounts.hard },
+    { label: "Good", value: ratingCounts.good },
+    { label: "Easy", value: ratingCounts.easy },
   ];
 
   return (
@@ -68,7 +96,7 @@ export default function StudyResultPage() {
         title="Study Session Results"
         description="Here's how you did in this session."
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map((stat) => (
           <StatCard
             key={stat.title}
@@ -78,7 +106,23 @@ export default function StudyResultPage() {
           />
         ))}
       </div>
+      <div className="mt-4 rounded-lg border bg-card p-4">
+        <h2 className="text-sm font-medium text-muted-foreground">FSRS Response Breakdown</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {fsrsResponseStats.map((item) => (
+            <div key={item.label} className="rounded-md border bg-background p-3">
+              <div className="text-sm text-muted-foreground">{item.label}</div>
+              <div className="mt-1 text-2xl font-semibold">{item.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="mt-6 flex flex-wrap justify-end gap-2">
+        <Link href={deckId ? `/decks/${deckId}` : "/decks"}>
+          <Button variant="outline" onClick={resetProgress}>
+            Back to Deck
+          </Button>
+        </Link>
         <Link href="/study">
           <Button variant="outline" onClick={resetProgress}>
             Study Again

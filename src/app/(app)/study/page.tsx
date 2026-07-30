@@ -325,7 +325,13 @@ export default function StudyStartPage() {
 
               <div className="flex justify-end">
                 <Link
-                  href={createStudyUrl(mode, effectiveInputMethod, currentDeckId, newLimit, reviewLimit)}
+                  href={createStudyUrl(
+                    mode,
+                    effectiveInputMethod,
+                    currentDeckId,
+                    newLimit,
+                    reviewLimit,
+                  )}
                   passHref
                 >
                   <Button size="lg" disabled={!currentDeckId || !hasAnyCardLimit}>

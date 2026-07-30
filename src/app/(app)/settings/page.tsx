@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { getUserSettings, updateUserSettings } from "@/lib/data/settings";
 import { useStudyStore } from "@/stores/study-store";
 
@@ -36,6 +37,7 @@ const settingsSchema = z.object({
   reviewLimit: z.number().min(0).max(500),
   order: z.enum(["DUE_ASC", "RANDOM", "CREATED_DESC"]),
   theme: z.enum(["light", "dark", "system"]),
+  allowTypingCorrectnessOverride: z.boolean(),
 });
 
 type SettingsValues = z.infer<typeof settingsSchema>;
@@ -53,6 +55,7 @@ export default function SettingsPage() {
       reviewLimit: 100,
       order: "DUE_ASC",
       theme: "system",
+      allowTypingCorrectnessOverride: true,
     },
   });
 
@@ -77,6 +80,8 @@ export default function SettingsPage() {
       reviewLimit: settingsQuery.data.reviewLimit,
       theme: settingsQuery.data.theme,
       order,
+      allowTypingCorrectnessOverride:
+        settingsQuery.data.allowTypingCorrectnessOverride,
     });
   }, [settingsQuery.data, form]);
 
@@ -201,6 +206,27 @@ export default function SettingsPage() {
                       </SelectContent>
                     </Select>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="allowTypingCorrectnessOverride"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2 flex items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-1">
+                      <FormLabel>Typing Mode Correctness Override</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Allow manually changing Correct/Incorrect after auto text-match judgment.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />

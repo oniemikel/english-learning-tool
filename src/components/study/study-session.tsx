@@ -1,11 +1,13 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
+import { getUserSettings } from '@/lib/data/settings';
 import { submitStudyReview } from '@/lib/data/study';
+import { type StudyReviewSubmission } from '@/lib/study-rating';
 import { getEffectiveInputMethod, useStudyStore } from '@/stores/study-store';
 import { Flashcard } from './flashcard';
 
@@ -29,11 +31,17 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const solved = useStudyStore((state) => state.solved);
   const answer = useStudyStore((state) => state.answer);
   const start = useStudyStore((state) => state.start);
   const inputMethod = useStudyStore((state) => state.inputMethod);
+
+  const settingsQuery = useQuery({
+    queryKey: ['user-settings'],
+    queryFn: getUserSettings,
+  });
 
   const reviewMutation = useMutation({
     mutationFn: submitStudyReview,
@@ -50,19 +58,21 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
     startTransition(() => router.push('/study/result'));
   };
 
-  const handleGrade = async (grade: 'again' | 'hard' | 'good' | 'easy') => {
+  const handleReview = async (submission: StudyReviewSubmission) => {
     if (reviewMutation.isPending || isPending) {
       return;
     }
 
     const gradedCard = cards[currentIndex];
     try {
+      setSubmitError(null);
       await reviewMutation.mutateAsync({
         cardId: gradedCard.cardId,
-        rating: grade,
+        rating: submission.rating,
+        isCorrect: submission.isCorrect,
       });
 
-      answer(grade !== 'again');
+      answer(submission.isCorrect, submission.rating);
 
       if (currentIndex < totalCards - 1) {
         setCurrentIndex(currentIndex + 1);
@@ -71,6 +81,11 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
       }
     } catch (error) {
       console.error('Failed to save review:', error);
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to save this review. Please try again.',
+      );
     }
   };
 
@@ -102,7 +117,9 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
         : `Mode: ${title}`;
   const methodLabel =
     effectiveInputMethod === 'TYPING' ? 'Input: Typing' : 'Input: Self-Evaluation';
-  const useKeyboardRatingShortcuts = mode === 'en-ja' && effectiveInputMethod === 'SELF_EVALUATION';
+  const assessmentLabel = 'Assessment: Correct/Incorrect + FSRS (Again/Hard/Good/Easy)';
+  const useKeyboardRatingShortcuts = effectiveInputMethod === 'SELF_EVALUATION';
+  const allowTypingCorrectnessOverride = settingsQuery.data?.allowTypingCorrectnessOverride ?? true;
 
   return (
     <section className="mx-auto max-w-3xl animate-[ui-fade-in_220ms_ease-out]">
@@ -111,6 +128,7 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
         <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
           <span className="rounded-full border px-2 py-1">{directionLabel}</span>
           <span className="rounded-full border px-2 py-1">{methodLabel}</span>
+          <span className="rounded-full border px-2 py-1">{assessmentLabel}</span>
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
           <div className="h-full bg-primary transition-[width] duration-300 ease-out" style={{ width: `${progressRate}%` }} />
@@ -121,15 +139,22 @@ export function StudySession({ title, cards, mode }: StudySessionProps) {
       </div>
 
       <div key={currentCard.cardId} className="animate-[ui-slide-in-right_220ms_ease-out]">
+        {submitError ? (
+          <div className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            Could not save your answer. Try submitting again. Details: {submitError}
+          </div>
+        ) : null}
         <Flashcard
           card={currentCard}
           promptValue={promptValue}
           answerValue={answerValue}
-          onGrade={handleGrade}
+          onSubmitReview={handleReview}
           promptLabel={promptLabel}
           answerLabel={answerLabel}
           inputMethod={effectiveInputMethod}
           enableKeyboardRatingShortcuts={useKeyboardRatingShortcuts}
+          allowTypingCorrectnessOverride={allowTypingCorrectnessOverride}
+          isSubmitting={reviewMutation.isPending || isPending}
         />
       </div>
 

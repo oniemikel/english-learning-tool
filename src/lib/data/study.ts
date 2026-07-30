@@ -4,6 +4,13 @@ import { FSRSStateType, ReviewMode, ReviewRating } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import {
+  binaryCorrectMappingValues,
+  isCorrectSubmission,
+  resolveFsrsRating,
+  studyFsrsRatingValues,
+  studySubmittedRatingValues,
+} from '@/lib/study-rating';
 import { z } from 'zod';
 
 const GetStudySessionWordsSchema = z.object({
@@ -15,7 +22,9 @@ const GetStudySessionWordsSchema = z.object({
 
 const SubmitStudyReviewSchema = z.object({
   cardId: z.string().min(1),
-  rating: z.enum(['again', 'hard', 'good', 'easy']),
+  rating: z.enum(studySubmittedRatingValues),
+  isCorrect: z.boolean().optional(),
+  binaryCorrectMapping: z.enum(binaryCorrectMappingValues).optional(),
 });
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -24,13 +33,27 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const ratingToReviewRating: Record<
-  z.infer<typeof SubmitStudyReviewSchema>['rating'],
+  (typeof studyFsrsRatingValues)[number],
   ReviewRating
 > = {
   again: ReviewRating.AGAIN,
   hard: ReviewRating.HARD,
   good: ReviewRating.GOOD,
   easy: ReviewRating.EASY,
+};
+
+const isReviewLogIsCorrectCompatibilityError = (error: unknown) => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message;
+  return (
+    message.includes('isCorrect') ||
+    message.includes('Unknown argument') ||
+    message.includes('Unknown field') ||
+    message.includes('column')
+  );
 };
 
 export async function resolveDashboardStudyStart() {
@@ -407,7 +430,9 @@ export async function submitStudyReview(input: unknown) {
     throw new Error('You must be signed in to review cards.');
   }
 
-  const { cardId, rating } = SubmitStudyReviewSchema.parse(input);
+  const { cardId, rating, isCorrect, binaryCorrectMapping } = SubmitStudyReviewSchema.parse(input);
+  const fsrsRating = resolveFsrsRating(rating, binaryCorrectMapping);
+  const resolvedIsCorrect = typeof isCorrect === 'boolean' ? isCorrect : isCorrectSubmission(rating);
   const now = new Date();
 
   const result = await prisma.$transaction(async (tx) => {
@@ -443,14 +468,14 @@ export async function submitStudyReview(input: unknown) {
     let intervalDays = 1;
     let nextState: FSRSStateType = FSRSStateType.REVIEW;
 
-    if (rating === 'again') {
+    if (fsrsRating === 'again') {
       nextDifficulty = clamp(previousDifficulty + 0.6, 1, 10);
       nextStability = clamp(previousStability * 0.5, 0.1, 36500);
       intervalDays = 1 / 32; // 45 minutes
       nextState = FSRSStateType.RELEARNING;
     }
 
-    if (rating === 'hard') {
+    if (fsrsRating === 'hard') {
       nextDifficulty = clamp(previousDifficulty + 0.2, 1, 10);
       nextStability = clamp(
         previousStability * (1.1 + (1 - retrievability) * 0.2),
@@ -461,7 +486,7 @@ export async function submitStudyReview(input: unknown) {
       nextState = FSRSStateType.REVIEW;
     }
 
-    if (rating === 'good') {
+    if (fsrsRating === 'good') {
       nextDifficulty = clamp(previousDifficulty - 0.15, 1, 10);
       nextStability = clamp(
         previousStability * (1.4 + (1 - retrievability) * 0.4),
@@ -472,7 +497,7 @@ export async function submitStudyReview(input: unknown) {
       nextState = FSRSStateType.REVIEW;
     }
 
-    if (rating === 'easy') {
+    if (fsrsRating === 'easy') {
       nextDifficulty = clamp(previousDifficulty - 0.35, 1, 10);
       nextStability = clamp(
         previousStability * (1.9 + (1 - retrievability) * 0.7),
@@ -496,7 +521,7 @@ export async function submitStudyReview(input: unknown) {
         reps: {
           increment: 1,
         },
-        lapses: rating === 'again' ? { increment: 1 } : undefined,
+        lapses: fsrsRating === 'again' ? { increment: 1 } : undefined,
       },
     });
 
@@ -507,15 +532,34 @@ export async function submitStudyReview(input: unknown) {
       },
     });
 
-    await tx.reviewLog.create({
-      data: {
-        userId: session.user.id,
-        cardId,
-        rating: ratingToReviewRating[rating],
-        reviewMode: ReviewMode.NORMAL,
-        reviewedAt: now,
-      },
-    });
+    try {
+      await tx.reviewLog.create({
+        data: {
+          userId: session.user.id,
+          cardId,
+          isCorrect: resolvedIsCorrect,
+          rating: ratingToReviewRating[fsrsRating],
+          reviewMode: ReviewMode.NORMAL,
+          reviewedAt: now,
+        },
+      });
+    } catch (error) {
+      if (!isReviewLogIsCorrectCompatibilityError(error)) {
+        throw error;
+      }
+
+      // Backward compatibility for environments where the DB/client is not
+      // yet migrated with ReviewLog.isCorrect.
+      await tx.reviewLog.create({
+        data: {
+          userId: session.user.id,
+          cardId,
+          rating: ratingToReviewRating[fsrsRating],
+          reviewMode: ReviewMode.NORMAL,
+          reviewedAt: now,
+        },
+      });
+    }
 
     return {
       retrievability,

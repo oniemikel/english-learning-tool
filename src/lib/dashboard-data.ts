@@ -216,7 +216,8 @@ export async function getDashboardPageData() {
       target: userSettings?.dailyNewCards || 100,
     },
     studyGoals: weeklyStats.map((stat) => ({
-      day: stat.weekdayInitial,
+      day: stat.weekdayLabel+".",
+      // day: stat.weekdayInitial,
       progress: stat.reviewCount,
     })),
     recentDecks,

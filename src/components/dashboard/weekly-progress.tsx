@@ -7,14 +7,14 @@ import {
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
-interface StudyGoalsProps {
+interface WeeklyProgressProps {
   goals: {
     day: string;
     progress: number;
   }[];
 }
 
-const StudyGoals = ({ goals }: StudyGoalsProps) => {
+const WeeklyProgress = ({ goals }: WeeklyProgressProps) => {
   const maxProgress = Math.max(...goals.map(g => g.progress), 1);
   return (
     <Card>
@@ -36,4 +36,4 @@ const StudyGoals = ({ goals }: StudyGoalsProps) => {
   );
 };
 
-export default StudyGoals;
+export default WeeklyProgress;

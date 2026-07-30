@@ -5,6 +5,6 @@ export { default as MetricCard } from './metric-card';
 export { default as RecentDecks } from './recent-decks';
 export { default as DeckCard } from './deck-card';
 export { default as WeeklyActivity } from './weekly-activity';
-export { default as StudyGoals } from './study-goals';
+export { default as StudyGoals } from './weekly-progress';
 export { default as TodayProgressCard } from './today-progress-card';
 export { default as CircularProgress } from './circular-progress';

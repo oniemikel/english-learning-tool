@@ -5,6 +5,7 @@ import { PieChart, Pie, ResponsiveContainer } from "recharts";
 interface CircularProgressProps {
   value: number;
   color: string;
+  size?: number | string; // 例: 96, "100px", "6rem" など
 }
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
@@ -15,7 +16,11 @@ const EASE_POWER = 3.2;
 const easeTime = (progress: number) =>
   1 - Math.pow(1 - clamp01(progress), 1 / EASE_POWER);
 
-const CircularProgress = ({ value, color }: CircularProgressProps) => {
+const CircularProgress = ({
+  value,
+  color,
+  size = 96, // デフォルトサイズ: 96px
+}: CircularProgressProps) => {
   const totalLaps = Math.max(1, Math.ceil(value / 100));
   const totalDuration = (value / 100) * BASE_DURATION_PER_LAP;
 
@@ -59,8 +64,14 @@ const CircularProgress = ({ value, color }: CircularProgressProps) => {
     };
   });
 
+  // 数値が渡された場合は px 単位を付与、文字列（rem や % など）の場合はそのまま使用
+  const containerSize = typeof size === "number" ? `${size}px` : size;
+
   return (
-    <div className="relative h-24 w-24">
+    <div
+      className="relative"
+      style={{ width: containerSize, height: containerSize }}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           {lapLayers.map((layer) => (
@@ -70,7 +81,7 @@ const CircularProgress = ({ value, color }: CircularProgressProps) => {
               cx="50%"
               cy="50%"
               dataKey="value"
-              innerRadius="70%"
+              innerRadius="60%"
               outerRadius="100%"
               startAngle={450}
               endAngle={90}
@@ -89,9 +100,10 @@ const CircularProgress = ({ value, color }: CircularProgressProps) => {
         <span className="text-xl font-bold">{Math.round(value)}%</span>
 
         <span className="text-xs text-muted-foreground">
-          {totalLaps > 1
+          {/* {totalLaps > 1
             ? `${totalLaps}${["st", "nd", "rd"][totalLaps - 1] ?? "th"} lap`
-            : "done"}
+            : "done"} */}
+          {"done"}
         </span>
       </div>
     </div>

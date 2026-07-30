@@ -36,7 +36,7 @@ const WeeklyActivity = ({ labels, series }: WeeklyActivityProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[240px]">
+        <div className="h-60">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
               <XAxis

@@ -10,3 +10,7 @@ node_modules/
 *.log
 .vscode/
 tsconfig.tsbuildinfo
+# Docker override ファイル
+docker-compose.override.yml
+tailwind.config.ts.old
+english_learning_backup.sql

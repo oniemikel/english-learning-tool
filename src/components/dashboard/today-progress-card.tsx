@@ -32,19 +32,24 @@ const TodayProgressCard = ({
             <CardTitle className="text-lg font-semibold">
               Today's Progress
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Daily learning activity</p>
+            <p className="text-sm text-muted-foreground">
+              Daily learning activity
+            </p>
           </div>
           <p className="text-sm font-mono text-muted-foreground">
-            {today.toLocaleDateString('en-US', { weekday: 'long' })}
+            {today.toLocaleDateString("en-US", { weekday: "long" })}
           </p>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center gap-6">
-          <CircularProgress value={Math.round(progress)} color="#5b5bd6" />
-          <div className="flex-1 space-y-4">
+        <div className="flex flex-col items-center gap-6 w-full">
+          {/* 円チャート（上に配置） */}
+          <CircularProgress value={Math.round(progress)} color="#5b5bd6" size={200} />
+
+          {/* テキスト・プログレスバー・ミニステータス群 */}
+          <div className="w-full space-y-4">
             <div>
-              <div className="mb-1 flex justify-between text-sm">
+              <div className="mb-1 flex justify-center gap-4 text-sm">
                 <p className="text-muted-foreground">Reviews</p>
                 <p className="font-mono font-medium text-foreground">
                   {reviews} / {target}

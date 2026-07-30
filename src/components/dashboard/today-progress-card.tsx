@@ -1,15 +1,22 @@
-// src/components/dashboard/today-progress-card.tsx
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import CircularProgress from './circular-progress';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import CircularProgress from "./circular-progress";
 
 interface TodayProgressCardProps {
   newWords: number;
   reviews: number;
   target: number;
+  className?: string;
 }
 
-const MiniStat = ({ value, label }: { value: string | number; label: string }) => (
+const MiniStat = ({
+  value,
+  label,
+}: {
+  value: string | number;
+  label: string;
+}) => (
   <div className="flex flex-col items-center justify-center space-y-1 rounded-lg bg-muted/50 p-3">
     <p className="text-lg font-bold">{value}</p>
     <p className="text-xs text-muted-foreground">{label}</p>
@@ -20,12 +27,13 @@ const TodayProgressCard = ({
   newWords,
   reviews,
   target,
+  className,
 }: TodayProgressCardProps) => {
   const progress = target > 0 ? (reviews / target) * 100 : 0;
   const today = new Date();
 
   return (
-    <Card>
+    <Card className={cn("flex flex-col justify-between", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -41,10 +49,14 @@ const TodayProgressCard = ({
           </p>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="flex flex-1 flex-col justify-around space-y-6">
         <div className="flex flex-col items-center gap-6 w-full">
           {/* 円チャート（上に配置） */}
-          <CircularProgress value={Math.round(progress)} color="#5b5bd6" size={200} />
+          <CircularProgress
+            value={Math.round(progress)}
+            color="#5b5bd6"
+            size={200}
+          />
 
           {/* テキスト・プログレスバー・ミニステータス群 */}
           <div className="w-full space-y-4">

@@ -12,6 +12,7 @@ interface WeeklyProgressProps {
     day: string;
     progress: number;
   }[];
+  className?: string;
 }
 
 const WeeklyProgress = ({ goals }: WeeklyProgressProps) => {

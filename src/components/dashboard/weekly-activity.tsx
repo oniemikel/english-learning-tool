@@ -31,7 +31,9 @@ const WeeklyActivity = ({ labels, series }: WeeklyActivityProps) => {
     <Card>
       <CardHeader>
         <div>
-          <CardTitle className="text-lg font-semibold">Weekly Activity</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            Weekly Activity
+          </CardTitle>
           <CardDescription>Reviews per day</CardDescription>
         </div>
       </CardHeader>
@@ -53,11 +55,13 @@ const WeeklyActivity = ({ labels, series }: WeeklyActivityProps) => {
                 axisLine={false}
               />
               <Tooltip
-                cursor={{ fill: 'rgba(128, 128, 128, 0.1)' }}
+                // ホバー時の背景ハイライト（テーマに追従させる）
+                cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
                 contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '0.5rem',
+                  backgroundColor: "hsl(var(--card))",
+                  color: "hsl(var(--foreground))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "var(--radius)",
                 }}
               />
               <Bar dataKey="reviews" fill="#5b5bd6" radius={[4, 4, 0, 0]} />

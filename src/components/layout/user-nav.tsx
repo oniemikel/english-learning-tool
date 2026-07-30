@@ -17,7 +17,7 @@ import { Session } from 'next-auth';
 import { cn } from '@/lib/utils';
 
 interface UserNavProps {
-  user: Session['user'];
+  user: Session['user'] | null | undefined;
   variant?: 'icon' | 'sidebar';
   className?: string;
 }
@@ -76,9 +76,9 @@ export function UserNav({ user, variant = 'icon', className }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
+          {/* <DropdownMenuItem asChild>
             <Link href="/settings">View Profile</Link>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuItem asChild>
             <Link href="/settings">Settings</Link>
           </DropdownMenuItem>

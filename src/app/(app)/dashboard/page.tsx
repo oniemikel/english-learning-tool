@@ -1,14 +1,13 @@
-// src/app/(app)/dashboard/page.tsx
-import WelcomeBanner from '@/components/dashboard/welcome-banner';
-import StatsGrid from '@/components/dashboard/stats-grid';
-import TodayProgressCard from '@/components/dashboard/today-progress-card';
-import WeeklyProgress from '@/components/dashboard/weekly-progress';
-import RecentDecks from '@/components/dashboard/recent-decks';
-import WeeklyActivity from '@/components/dashboard/weekly-activity';
-import { getDashboardPageData } from '@/lib/dashboard-data';
-import DeckQuickView from '@/components/dashboard/deck-quick-view';
-import RecentHistory from '@/components/dashboard/recent-history';
-import ReviewsWidget from '@/components/dashboard/reviews-widget';
+import WelcomeBanner from "@/components/dashboard/welcome-banner";
+import StatsGrid from "@/components/dashboard/stats-grid";
+import TodayProgressCard from "@/components/dashboard/today-progress-card";
+import WeeklyProgress from "@/components/dashboard/weekly-progress";
+import RecentDecks from "@/components/dashboard/recent-decks";
+import WeeklyActivity from "@/components/dashboard/weekly-activity";
+import { getDashboardPageData } from "@/lib/dashboard-data";
+import DeckQuickView from "@/components/dashboard/deck-quick-view";
+import RecentHistory from "@/components/dashboard/recent-history";
+import ReviewsWidget from "@/components/dashboard/reviews-widget";
 
 export default async function DashboardPage() {
   const data = await getDashboardPageData();
@@ -33,15 +32,16 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <WelcomeBanner name={user.name} />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <TodayProgressCard
-            newWords={todayProgress.newWords}
-            reviews={todayProgress.reviews}
-            target={todayProgress.target}
-          />
-        </div>
-        <WeeklyProgress goals={studyGoals} />
+
+      {/* 今日の進捗 & 週間進捗のグリッド（高さを揃える） */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-stretch">
+        <TodayProgressCard
+          className="lg:col-span-2 h-full"
+          newWords={todayProgress.newWords}
+          reviews={todayProgress.reviews}
+          target={todayProgress.target}
+        />
+        <WeeklyProgress goals={studyGoals} className="h-full" />
       </div>
       <StatsGrid stats={stats} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

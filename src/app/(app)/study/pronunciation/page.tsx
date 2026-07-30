@@ -1,9 +1,14 @@
 'use client';
 
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageTitle } from '@/components/ui/page-title';
+import { useStudyStore } from '@/stores/study-store';
 
 export default function StudyPronunciationPage() {
+  const deckId = useStudyStore((state) => state.deckId);
+
   return (
     <section>
       <PageTitle title="Pronunciation Practice" />
@@ -17,6 +22,14 @@ export default function StudyPronunciationPage() {
           </p>
         </CardContent>
       </Card>
+      <div className="mt-6 flex flex-wrap justify-end gap-2">
+        <Link href={deckId ? `/decks/${deckId}` : '/decks'}>
+          <Button variant="outline">Back to Deck</Button>
+        </Link>
+        <Link href="/dashboard">
+          <Button>Back to Dashboard</Button>
+        </Link>
+      </div>
     </section>
   );
 }

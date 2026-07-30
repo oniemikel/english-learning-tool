@@ -2,7 +2,7 @@
 import WelcomeBanner from '@/components/dashboard/welcome-banner';
 import StatsGrid from '@/components/dashboard/stats-grid';
 import TodayProgressCard from '@/components/dashboard/today-progress-card';
-import StudyGoals from '@/components/dashboard/study-goals';
+import WeeklyProgress from '@/components/dashboard/weekly-progress';
 import RecentDecks from '@/components/dashboard/recent-decks';
 import WeeklyActivity from '@/components/dashboard/weekly-activity';
 import { getDashboardPageData } from '@/lib/dashboard-data';
@@ -41,7 +41,7 @@ export default async function DashboardPage() {
             target={todayProgress.target}
           />
         </div>
-        <StudyGoals goals={studyGoals} />
+        <WeeklyProgress goals={studyGoals} />
       </div>
       <StatsGrid stats={stats} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

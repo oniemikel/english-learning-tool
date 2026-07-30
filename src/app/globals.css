@@ -1,67 +1,111 @@
 @import "tailwindcss";
 
+/* ==================================================
+ * 1. Tailwind v4 テーマ定義 (@theme)
+ * ================================================== */
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+/* ==================================================
+ * 2. カラー数値変数 (HSL)
+ * ================================================== */
 :root {
   --background: 210 33% 98%;
   --foreground: 223 38% 14%;
 
   --card: 0 0% 100%;
   --card-foreground: 223 38% 14%;
- 
+
   --popover: 0 0% 100%;
+  /* ドロップダウン等の背景色 (白) */
   --popover-foreground: 223 38% 14%;
- 
+
   --primary: 217 66% 45%;
   --primary-foreground: 210 40% 98%;
- 
+
   --secondary: 215 28% 93%;
   --secondary-foreground: 223 38% 14%;
- 
+
   --muted: 215 25% 92%;
   --muted-foreground: 219 14% 38%;
- 
+
   --accent: 212 43% 90%;
   --accent-foreground: 223 38% 14%;
- 
+
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
 
   --border: 215 23% 84%;
   --input: 215 23% 84%;
   --ring: 217 66% 45%;
- 
+
   --radius: 0.5rem;
 }
- 
+
 .dark {
   --background: 222 34% 10%;
   --foreground: 210 30% 95%;
- 
+
   --card: 223 28% 13%;
   --card-foreground: 210 30% 95%;
- 
+
   --popover: 223 28% 13%;
   --popover-foreground: 210 30% 95%;
- 
+
   --primary: 214 78% 67%;
   --primary-foreground: 223 38% 14%;
- 
+
   --secondary: 221 21% 20%;
   --secondary-foreground: 210 30% 95%;
- 
+
   --muted: 220 17% 18%;
   --muted-foreground: 216 16% 70%;
- 
+
   --accent: 216 22% 24%;
   --accent-foreground: 210 30% 95%;
- 
+
   --destructive: 0 62% 42%;
   --destructive-foreground: 210 40% 98%;
- 
+
   --border: 220 17% 26%;
   --input: 220 17% 26%;
   --ring: 214 78% 67%;
 }
 
+/* ==================================================
+ * 3. ベーススタイル・ユーティリティ・アニメーション
+ * ================================================== */
 * {
   border-color: hsl(var(--border));
 }
@@ -86,6 +130,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -95,6 +140,7 @@ body {
   from {
     opacity: 1;
   }
+
   to {
     opacity: 0;
   }
@@ -105,9 +151,9 @@ body {
     opacity: 0;
     transform: scale(0.97);
   }
+
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -116,6 +162,7 @@ body {
     opacity: 1;
     transform: scale(1);
   }
+
   to {
     opacity: 0;
     transform: scale(0.97);
@@ -127,6 +174,7 @@ body {
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -138,6 +186,7 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+
   to {
     opacity: 0;
     transform: translateY(-8px);
@@ -149,9 +198,9 @@ body {
     opacity: 0;
     transform: translateX(12px);
   }
+
   to {
     opacity: 1;
-    transform: translateX(0);
   }
 }
 
@@ -160,6 +209,7 @@ body {
     opacity: 0;
     transform: perspective(1000px) rotateY(-10deg) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: perspective(1000px) rotateY(0deg) scale(1);

@@ -1,3 +1,4 @@
+// src/components/decks/deck-form.tsx
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 export const deckSchema = z.object({
@@ -18,6 +18,8 @@ export const deckSchema = z.object({
   isPublic: z.boolean().default(false),
 });
 
+// 入力型と出力型を定義
+export type DeckFormInput = z.input<typeof deckSchema>;
 export type DeckFormValues = z.infer<typeof deckSchema>;
 
 type DeckFormProps = {
@@ -37,7 +39,7 @@ export function DeckForm({
   submitButtonText = 'Save',
   cancelPending = false,
 }: DeckFormProps) {
-  const form = useForm<DeckFormValues>({
+  const form = useForm<DeckFormInput, any, DeckFormValues>({
     resolver: zodResolver(deckSchema),
     defaultValues: initialData || {
       name: '',

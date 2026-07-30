@@ -1,11 +1,10 @@
-// src/components/dashboard/metric-card.tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icon, Icons, type Icon as IconType } from '@/components/icons';
 
 interface MetricCardProps {
   title: string;
-  value: string;
-  change: string;
+  value: string | number; // ← number も受け取れるように変更
+  change?: string;        // ← ? を付けてオプショナル（任意）に変更
   icon: IconType;
   color: string;
 }
@@ -21,7 +20,8 @@ const MetricCard = ({ title, value, change, icon, color }: MetricCardProps) => {
       <CardContent className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-3xl font-bold">{value}</p>
-          <p className="text-xs text-muted-foreground">{change}</p>
+          {/* change が渡された時だけ表示する */}
+          {change && <p className="text-xs text-muted-foreground">{change}</p>}
         </div>
         <div className={`flex h-10 w-10 items-center justify-center rounded-lg`} style={{ backgroundColor: color }}>
           <Icon name={icon} className="h-6 w-6 text-primary-foreground" />

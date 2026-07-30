@@ -19,13 +19,13 @@ export default function StatisticsPage() {
       <PageTitle title="統計" description="学習成果をダッシュボード形式で可視化します。" />
 
       <div className="mb-5 flex gap-2">
-        <Button variant={range === '7d' ? 'primary' : 'outline'} onClick={() => setRange('7d')}>
+        <Button variant={range === '7d' ? 'default' : 'outline'} onClick={() => setRange('7d')}>
           7日
         </Button>
-        <Button variant={range === '30d' ? 'primary' : 'outline'} onClick={() => setRange('30d')}>
+        <Button variant={range === '30d' ? 'default' : 'outline'} onClick={() => setRange('30d')}>
           30日
         </Button>
-        <Button variant={range === '90d' ? 'primary' : 'outline'} onClick={() => setRange('90d')}>
+        <Button variant={range === '90d' ? 'default' : 'outline'} onClick={() => setRange('90d')}>
           90日
         </Button>
       </div>
@@ -33,25 +33,25 @@ export default function StatisticsPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">総レビュー</p>
+            <p className="text-xs text-(--muted-foreground)">総レビュー</p>
             <p className="mt-2 text-2xl font-semibold">{data?.totalReviews ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">学習時間(分)</p>
+            <p className="text-xs text-(--muted-foreground)">学習時間(分)</p>
             <p className="mt-2 text-2xl font-semibold">{data?.totalStudyMinutes ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">正答率</p>
+            <p className="text-xs text-(--muted-foreground)">正答率</p>
             <p className="mt-2 text-2xl font-semibold">{data?.accuracy ?? 0}%</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-5 text-center">
-            <p className="text-xs text-[var(--muted-foreground)]">継続日数</p>
+            <p className="text-xs text-(--muted-foreground)">継続日数</p>
             <p className="mt-2 text-2xl font-semibold">{data?.streak ?? 0}日</p>
           </CardContent>
         </Card>
@@ -64,8 +64,8 @@ export default function StatisticsPage() {
         <CardContent>
           <div className="grid grid-cols-7 gap-2">
             {data?.trend.map((point) => (
-              <div key={point.label} className="rounded-[var(--radius-control)] bg-[var(--muted)] p-3 text-center">
-                <p className="text-xs text-[var(--muted-foreground)]">{point.label}</p>
+              <div key={point.label} className="rounded-(--radius-control) bg-(--muted) p-3 text-center">
+                <p className="text-xs text-(--muted-foreground)">{point.label}</p>
                 <p className="mt-1 text-lg font-semibold">{point.value}</p>
               </div>
             ))}

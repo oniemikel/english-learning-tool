@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -8,25 +8,19 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Book, Check, MoreVertical, Plus } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
+} from "@/components/ui/dropdown-menu";
+import { Book, Check, MoreVertical, Plus } from "lucide-react";
+import { Button } from "../ui/button";
+import type { listDecks } from "@/lib/data/decks"; // ★ listDecks が定義されているパスを指定してください
 
-type Deck = {
-  id: string;
-  name: string;
-  description?: string | null;
-  dueCount: number;
-  newCount: number;
-  wordCount: number;
-};
+// ★ listDecks の戻り値配列から1要素分の型を抽出
+export type Deck = Awaited<ReturnType<typeof listDecks>>[number];
 
 type DeckCardProps = {
   deck: Deck;
@@ -40,9 +34,11 @@ export function DeckCard({ deck, onDelete }: DeckCardProps) {
         <CardTitle className="hover:underline">
           <Link href={`/decks/${deck.id}`}>{deck.name}</Link>
         </CardTitle>
-        <CardDescription className="mt-1 line-clamp-2 h-10">{deck.description}</CardDescription>
+        <CardDescription className="mt-1 line-clamp-2 h-10">
+          {deck.description}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow">
+      <CardContent className="grow">
         <div className="grid grid-cols-3 gap-2 text-sm">
           <div className="flex items-center gap-2">
             <Book className="h-4 w-4 text-muted-foreground" />
@@ -75,7 +71,10 @@ export function DeckCard({ deck, onDelete }: DeckCardProps) {
             <DropdownMenuItem asChild>
               <Link href={`/decks/${deck.id}/edit`}>Edit</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(deck)} className="text-red-500 focus:text-red-500">
+            <DropdownMenuItem
+              onClick={() => onDelete(deck)}
+              className="text-red-500 focus:text-red-500"
+            >
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -13,10 +13,12 @@ const ListWordsSchema = z.object({
   pageSize: z.number().int().min(1).max(100).default(10),
 });
 
-const CreateWordSchema = z.object({
-  deckId: z.string().min(1, 'Deck ID is required'),
+// ベースとなるオブジェクトスキーマ (.refine をかける前の状態)
+const BaseWordSchema = z.object({
+  deckIds: z.array(z.string()).min(1, 'At least one Deck ID is required'),
   word: z.string().min(1, 'Word is required'),
-  meaning: z.string().min(1, 'Meaning is required'),
+  translation: z.string().optional(),
+  meaning: z.string().optional(),
   pronunciation: z.string().optional(),
   partOfSpeech: z.string().optional(),
   example: z.string().optional(),
@@ -24,7 +26,17 @@ const CreateWordSchema = z.object({
   etymology: z.string().optional(),
 });
 
-const UpdateWordSchema = CreateWordSchema.partial().extend({
+// 作成用スキーマ (意味/訳の存在チェックを追加)
+const CreateWordSchema = BaseWordSchema.refine(
+  (data) => data.translation || data.meaning,
+  {
+    message: 'Meaning/Translation is required',
+    path: ['translation'],
+  },
+);
+
+// 更新用スキーマ (部分更新を許可し、id を追加)
+const UpdateWordSchema = BaseWordSchema.partial().extend({
   id: z.string().min(1, 'Word ID is required'),
 });
 
@@ -228,23 +240,29 @@ export async function createWord(input: unknown) {
   const userId = session.user.id;
 
   const data = CreateWordSchema.parse(input);
+  const meaningValue = data.translation || data.meaning || '';
 
-  // 指定されたデッキがユーザー自身のものか確認
-  const deck = await prisma.deck.findFirst({
-    where: { id: data.deckId, userId, deletedAt: null },
+  // 指定されたデッキすべてがユーザー自身のものか確認
+  const userDecks = await prisma.deck.findMany({
+    where: {
+      id: { in: data.deckIds },
+      userId,
+      deletedAt: null,
+    },
   });
-  if (!deck) {
-    throw new Error('Deck not found or unauthorized.');
+
+  if (userDecks.length === 0) {
+    throw new Error('Decks not found or unauthorized.');
   }
 
   const newWord = await prisma.word.create({
     data: {
       word: data.word,
-      meaning: data.meaning,
+      meaning: meaningValue,
       pronunciation: data.pronunciation,
       partOfSpeech: data.partOfSpeech,
       decks: {
-        connect: { id: data.deckId },
+        connect: userDecks.map((deck) => ({ id: deck.id })),
       },
       exampleSentences: data.example
         ? {
@@ -281,6 +299,7 @@ export async function updateWord(input: unknown) {
   const userId = session.user.id;
 
   const data = UpdateWordSchema.parse(input);
+  const meaningValue = data.translation || data.meaning;
 
   const existingWord = await prisma.word.findFirst({
     where: {
@@ -298,9 +317,16 @@ export async function updateWord(input: unknown) {
     where: { id: data.id },
     data: {
       word: data.word,
-      meaning: data.meaning,
+      meaning: meaningValue,
       pronunciation: data.pronunciation,
       partOfSpeech: data.partOfSpeech,
+      ...(data.deckIds
+        ? {
+            decks: {
+              set: data.deckIds.map((id) => ({ id })),
+            },
+          }
+        : {}),
     },
   });
 

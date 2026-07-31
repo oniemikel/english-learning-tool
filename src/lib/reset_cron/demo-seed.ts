@@ -268,6 +268,9 @@ async function seedDemoData(prisma: DbClient, userId: string) {
   const cardRows: Prisma.CardCreateManyInput[] = [];
   const fsrsRows: Prisma.FSRSStateCreateManyInput[] = [];
 
+  // ★ 追加: Deck と Word の中間テーブル用配列
+  const deckToWordRows: Array<{ A: string; B: string }> = [];
+
   const createdDeckIds: string[] = [];
   const cardStates: Array<{ cardId: string; state: FSRSStateType }> = [];
 
@@ -303,6 +306,12 @@ async function seedDemoData(prisma: DbClient, userId: string) {
         source: 'demo-seed',
       });
 
+      // ★ 追加: Deck(A) と Word(B) の中間テーブルレコードを生成
+      deckToWordRows.push({
+        A: deckId,
+        B: wordId,
+      });
+
       exampleRows.push({
         id: randomUUID(),
         wordId,
@@ -311,6 +320,7 @@ async function seedDemoData(prisma: DbClient, userId: string) {
         sortOrder: 0,
       });
 
+      // ★ 修正: schema.prisma の定義通り Card から deckId を除去
       cardRows.push({
         id: cardId,
         wordId,
@@ -339,6 +349,15 @@ async function seedDemoData(prisma: DbClient, userId: string) {
   await createManyInChunks((chunk) => prisma.exampleSentence.createMany({ data: chunk }), exampleRows);
   await createManyInChunks((chunk) => prisma.card.createMany({ data: chunk }), cardRows);
   await createManyInChunks((chunk) => prisma.fSRSState.createMany({ data: chunk }), fsrsRows);
+
+  // ★ 追加: DeckToWord 中間テーブルへの一括バインド (生SQLで高速挿入)
+  for (let i = 0; i < deckToWordRows.length; i += CREATE_MANY_BATCH_SIZE) {
+    const chunk = deckToWordRows.slice(i, i + CREATE_MANY_BATCH_SIZE);
+    const values = chunk.map((r) => `('${r.A}', '${r.B}')`).join(',');
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO \`_DeckToWord\` (\`A\`, \`B\`) VALUES ${values}`
+    );
+  }
 
   // 2. 履歴ログの一括構築
   const startOfToday = new Date(now);

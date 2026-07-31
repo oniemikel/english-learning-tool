@@ -4,6 +4,9 @@ import { type ReactNode } from 'react';
 import { Providers } from '@/app/providers';
 import '@/app/globals.css';
 
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
 const sans = Manrope({
   subsets: ['latin'],
   variable: '--font-sans',
@@ -38,6 +41,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
         )}
       >
         <Providers>{children}</Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

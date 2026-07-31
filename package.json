@@ -33,6 +33,7 @@
     "@tanstack/react-query-devtools": "^5.101.4",
     "@uiw/react-heat-map": "^2.3.4",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/config": "^0.5.5",
     "@vercel/speed-insights": "^2.0.0",
     "autoprefixer": "^10.5.4",
     "class-variance-authority": "^0.7.1",

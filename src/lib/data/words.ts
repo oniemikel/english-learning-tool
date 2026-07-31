@@ -4,13 +4,31 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-// ★ export を外し、内部利用のスキーマに変更
+// --- スキーマ定義 ---
+
 const ListWordsSchema = z.object({
   deckId: z.string().optional(),
   query: z.string().optional(),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(100).default(10),
 });
+
+const CreateWordSchema = z.object({
+  deckId: z.string().min(1, 'Deck ID is required'),
+  word: z.string().min(1, 'Word is required'),
+  meaning: z.string().min(1, 'Meaning is required'),
+  pronunciation: z.string().optional(),
+  partOfSpeech: z.string().optional(),
+  example: z.string().optional(),
+  definition: z.string().optional(),
+  etymology: z.string().optional(),
+});
+
+const UpdateWordSchema = CreateWordSchema.partial().extend({
+  id: z.string().min(1, 'Word ID is required'),
+});
+
+// --- 関数定義 ---
 
 export async function listWords(input: unknown) {
   const session = await auth();
@@ -130,6 +148,11 @@ export async function getWordById(input: string | { id: string }) {
       },
     },
     include: {
+      exampleSentences: {
+        where: { deletedAt: null },
+        orderBy: { sortOrder: 'asc' },
+        take: 1,
+      },
       decks: {
         where: {
           userId,
@@ -170,11 +193,19 @@ export async function getWordById(input: string | { id: string }) {
   const accuracy =
     totalReviews > 0 ? Math.round((correctCount / totalReviews) * 100) : 0;
 
+  const firstExample = word.exampleSentences[0]?.english ?? '';
+
   return {
     id: word.id,
     word: word.word,
     translation: word.meaning,
-    partOfSpeech: word.partOfSpeech,
+    meaning: word.meaning,
+    pronunciation: word.pronunciation ?? null,
+    partOfSpeech: word.partOfSpeech ?? null,
+    definition: word.meaning, // ページ側の参照用に定義
+    example: firstExample,     // ページ側の参照用に定義
+    etymology: null,          // 語源フィールドがDBにない場合はnull
+    state: word.card?.fsrsState?.state ?? 'NEW',
     nextReview: word.card?.fsrsState?.due.toISOString() ?? null,
     deckIds: word.decks.map((deck) => deck.id),
     decks: word.decks.map((deck) => ({
@@ -184,4 +215,130 @@ export async function getWordById(input: string | { id: string }) {
     accuracy,
     reviewLogs: logs,
   };
+}
+
+/**
+ * 新規単語の作成
+ */
+export async function createWord(input: unknown) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('You must be signed in to create a word.');
+  }
+  const userId = session.user.id;
+
+  const data = CreateWordSchema.parse(input);
+
+  // 指定されたデッキがユーザー自身のものか確認
+  const deck = await prisma.deck.findFirst({
+    where: { id: data.deckId, userId, deletedAt: null },
+  });
+  if (!deck) {
+    throw new Error('Deck not found or unauthorized.');
+  }
+
+  const newWord = await prisma.word.create({
+    data: {
+      word: data.word,
+      meaning: data.meaning,
+      pronunciation: data.pronunciation,
+      partOfSpeech: data.partOfSpeech,
+      decks: {
+        connect: { id: data.deckId },
+      },
+      exampleSentences: data.example
+        ? {
+            create: {
+              english: data.example,
+              japanese: '',
+            },
+          }
+        : undefined,
+      card: {
+        create: {
+          userId,
+          fsrsState: {
+            create: {
+              state: 'NEW',
+              due: new Date(),
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return newWord;
+}
+
+/**
+ * 単語情報の更新
+ */
+export async function updateWord(input: unknown) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('You must be signed in to update a word.');
+  }
+  const userId = session.user.id;
+
+  const data = UpdateWordSchema.parse(input);
+
+  const existingWord = await prisma.word.findFirst({
+    where: {
+      id: data.id,
+      deletedAt: null,
+      decks: { some: { userId, deletedAt: null } },
+    },
+  });
+
+  if (!existingWord) {
+    throw new Error('Word not found or unauthorized.');
+  }
+
+  const updatedWord = await prisma.word.update({
+    where: { id: data.id },
+    data: {
+      word: data.word,
+      meaning: data.meaning,
+      pronunciation: data.pronunciation,
+      partOfSpeech: data.partOfSpeech,
+    },
+  });
+
+  return updatedWord;
+}
+
+/**
+ * 公開デッキの単語一覧取得
+ */
+export async function listPublicWords(deckId: string) {
+  const words = await prisma.word.findMany({
+    where: {
+      deletedAt: null,
+      decks: {
+        some: {
+          id: deckId,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      exampleSentences: {
+        where: { deletedAt: null },
+        take: 1,
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return words.map((word) => ({
+    id: word.id,
+    word: word.word,
+    meaning: word.meaning,
+    pronunciation: word.pronunciation,
+    partOfSpeech: word.partOfSpeech,
+    example: word.exampleSentences[0]?.english ?? '',
+  }));
 }

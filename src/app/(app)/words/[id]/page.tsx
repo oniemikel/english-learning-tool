@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageTitle } from '@/components/ui/page-title';
 import { getWordById } from '@/lib/data/words';
+import { AnimatedContainer } from '@/components/animated-container';
 
 export default function WordDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,44 +47,48 @@ export default function WordDetailPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>基本情報</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div>
-              <p className="mb-1 text-(--muted-foreground)">デッキ:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {wordQuery.data.decks.map((deck) => (
-                  <Link key={deck.id} href={`/decks/${deck.id}`}>
-                    <Badge variant="outline">{deck.name}</Badge>
-                  </Link>
-                ))}
+        <AnimatedContainer>
+          <Card>
+            <CardHeader>
+              <CardTitle>基本情報</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div>
+                <p className="mb-1 text-(--muted-foreground)">デッキ:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {wordQuery.data.decks.map((deck) => (
+                    <Link key={deck.id} href={`/decks/${deck.id}`}>
+                      <Badge variant="outline">{deck.name}</Badge>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-            <p>
-              <span className="text-(--muted-foreground)">品詞:</span> {wordQuery.data.partOfSpeech}
-            </p>
-            <p>
-              <span className="text-(--muted-foreground)">発音:</span> {wordQuery.data.pronunciation}
-            </p>
-            <p>
-              <span className="text-(--muted-foreground)">次回復習:</span> {wordQuery.data.nextReview}
-            </p>
-            <Badge>{wordQuery.data.state}</Badge>
-          </CardContent>
-        </Card>
+              <p>
+                <span className="text-(--muted-foreground)">品詞:</span> {wordQuery.data.partOfSpeech}
+              </p>
+              <p>
+                <span className="text-(--muted-foreground)">発音:</span> {wordQuery.data.pronunciation}
+              </p>
+              <p>
+                <span className="text-(--muted-foreground)">次回復習:</span> {wordQuery.data.nextReview}
+              </p>
+              <Badge>{wordQuery.data.state}</Badge>
+            </CardContent>
+          </Card>
+        </AnimatedContainer>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>意味・用法</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p>{wordQuery.data.definition || '英英定義は未登録です。'}</p>
-            <p className="rounded-(--radius-control) bg-(--muted) p-3">{wordQuery.data.example || '例文は未登録です。'}</p>
-            <p className="text-xs text-(--muted-foreground)">語源: {wordQuery.data.etymology || '未登録'}</p>
-          </CardContent>
-        </Card>
+        <AnimatedContainer delay={0.05}>
+          <Card>
+            <CardHeader>
+              <CardTitle>意味・用法</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <p>{wordQuery.data.definition || '英英定義は未登録です。'}</p>
+              <p className="rounded-(--radius-control) bg-(--muted) p-3">{wordQuery.data.example || '例文は未登録です。'}</p>
+              <p className="text-xs text-(--muted-foreground)">語源: {wordQuery.data.etymology || '未登録'}</p>
+            </CardContent>
+          </Card>
+        </AnimatedContainer>
       </div>
     </section>
   );

@@ -37,6 +37,35 @@
   --radius-sm: calc(var(--radius) - 4px);
 }
 
+/* アプリ全体のスクロールバーを統一 */
+@layer base {
+  /* Firefox 用 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+  }
+
+  /* Chrome, Safari, Edge 用 */
+  ::-webkit-scrollbar {
+    width: 4px;  /* 縦スクロールバーの幅 */
+    height: 3px; /* 横スクロールバーの高さ */
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    foreground-color: hsl(var(--color-accent-foreground) / 0.2);
+    background-color: hsl(var(--muted-foreground) / 0.1);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+  }
+}
+
 /* ==================================================
  * 2. カラー数値変数 (HSL)
  * ================================================== */

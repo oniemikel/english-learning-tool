@@ -8,6 +8,7 @@ import { useStudyStore } from '@/stores/study-store';
 import { getStudySessionWords } from '@/lib/data/study';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { AnimatedContainer } from '@/components/animated-container';
 
 export default function StudyEnJaPage() {
   const searchParams = useSearchParams();
@@ -72,9 +73,11 @@ export default function StudyEnJaPage() {
   if (wordsQuery.isLoading) {
     return (
       <section className="mx-auto max-w-3xl">
-        <Skeleton className="h-8 w-1/3" />
-        <Skeleton className="mt-4 h-48 w-full" />
-        <Skeleton className="mt-4 h-12 w-full" />
+        <AnimatedContainer>
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="mt-4 h-48 w-full" />
+          <Skeleton className="mt-4 h-12 w-full" />
+        </AnimatedContainer>
       </section>
     );
   }
@@ -82,13 +85,15 @@ export default function StudyEnJaPage() {
   if (wordsQuery.isError) {
     return (
       <section className="mx-auto max-w-3xl space-y-4 text-center">
-        <h1 className="text-2xl font-semibold">Failed to load study cards.</h1>
-        <p className="text-sm text-muted-foreground">
-          Please check your network connection and try again.
-        </p>
-        <div>
-          <Button onClick={() => wordsQuery.refetch()}>Retry</Button>
-        </div>
+        <AnimatedContainer>
+          <h1 className="text-2xl font-semibold">Failed to load study cards.</h1>
+          <p className="text-sm text-muted-foreground">
+            Please check your network connection and try again.
+          </p>
+          <div>
+            <Button onClick={() => wordsQuery.refetch()}>Retry</Button>
+          </div>
+        </AnimatedContainer>
       </section>
     );
   }

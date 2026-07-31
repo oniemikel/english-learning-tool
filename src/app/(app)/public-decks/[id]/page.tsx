@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AnimatedContainer } from '@/components/animated-container';
 
 const schema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -78,80 +79,82 @@ export default function PublicDeckDetailPage() {
   return (
     <section>
       <PageTitle title={deck.name} description={deck.description} />
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Word Samples</CardTitle>
-            <CardDescription>Here are some examples of words from this deck.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Word</TableHead>
-                  <TableHead>Translation</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {wordsQuery.isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : wordsQuery.isError ? (
+      <AnimatedContainer delay={0.05}>
+        <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+          <Card>
+            <CardHeader>
+              <CardTitle>Word Samples</CardTitle>
+              <CardDescription>Here are some examples of words from this deck.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={2} className="text-center">
-                      Could not load words.
-                    </TableCell>
+                    <TableHead>Word</TableHead>
+                    <TableHead>Translation</TableHead>
                   </TableRow>
-                ) : (
-                  wordsQuery.data?.map((word) => (
-                    <TableRow key={word.id}>
-                      <TableCell className="font-medium">{word.word}</TableCell>
-                      <TableCell>{word.translation}</TableCell>
+                </TableHeader>
+                <TableBody>
+                  {wordsQuery.isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-5 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-24" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : wordsQuery.isError ? (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center">
+                        Could not load words.
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  ) : (
+                    wordsQuery.data?.map((word) => (
+                      <TableRow key={word.id}>
+                        <TableCell className="font-medium">{word.word}</TableCell>
+                        <TableCell>{word.translation}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Clone This Deck</CardTitle>
-            <CardDescription>
-              Create a copy of this deck in your own collection to start studying.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={form.handleSubmit((values) => cloneMutation.mutate(values))}>
-              <div className="space-y-1">
-                <label htmlFor="name" className="text-sm font-medium">
-                  New Deck Name
-                </label>
-                <Input id="name" {...form.register('name')} />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Link href="/public-decks">
-                  <Button type="button" variant="outline">
-                    Back
+          <Card>
+            <CardHeader>
+              <CardTitle>Clone This Deck</CardTitle>
+              <CardDescription>
+                Create a copy of this deck in your own collection to start studying.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={form.handleSubmit((values) => cloneMutation.mutate(values))}>
+                <div className="space-y-1">
+                  <label htmlFor="name" className="text-sm font-medium">
+                    New Deck Name
+                  </label>
+                  <Input id="name" {...form.register('name')} />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Link href="/public-decks">
+                    <Button type="button" variant="outline">
+                      Back
+                    </Button>
+                  </Link>
+                  <Button type="submit" disabled={cloneMutation.isPending}>
+                    {cloneMutation.isPending ? 'Cloning...' : 'Clone Deck'}
                   </Button>
-                </Link>
-                <Button type="submit" disabled={cloneMutation.isPending}>
-                  {cloneMutation.isPending ? 'Cloning...' : 'Clone Deck'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </AnimatedContainer>
     </section>
   );
 }

@@ -37,6 +37,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AnimatedContainer } from "@/components/animated-container";
 
 const STUDY_ORDER_STORAGE_KEY = "settings.studyOrder";
 
@@ -182,23 +183,24 @@ export default function StudyStartPage() {
 
       <Form {...form}>
         <form>
-          <Card className="mx-auto max-w-2xl">
-            <CardHeader>
-              <CardTitle>Session Settings</CardTitle>
+          <AnimatedContainer delay={0.05}>
+            <Card className="mx-auto max-w-2xl">
+              <CardHeader>
+                <CardTitle>Session Settings</CardTitle>
 
-              <CardDescription>
-                {currentDeckId ? (
-                  <>
-                    You are studying deck:
-                    <span className="ml-1 font-semibold">{currentDeckId}</span>
-                  </>
-                ) : (
-                  "Please select a deck to start studying."
-                )}
-              </CardDescription>
-            </CardHeader>
+                <CardDescription>
+                  {currentDeckId ? (
+                    <>
+                      You are studying deck:
+                      <span className="ml-1 font-semibold">{currentDeckId}</span>
+                    </>
+                  ) : (
+                    "Please select a deck to start studying."
+                  )}
+                </CardDescription>
+              </CardHeader>
 
-            <CardContent className="space-y-6">
+              <CardContent className="space-y-6">
               <FormField
                 control={form.control}
                 name="mode"
@@ -340,13 +342,14 @@ export default function StudyStartPage() {
                 </Link>
               </div>
 
-              {!hasAnyCardLimit ? (
-                <p className="text-sm text-muted-foreground">
-                  Set at least one of New Cards or Review Cards above 0 to start a session.
-                </p>
-              ) : null}
-            </CardContent>
-          </Card>
+                {!hasAnyCardLimit ? (
+                  <p className="text-sm text-muted-foreground">
+                    Set at least one of New Cards or Review Cards above 0 to start a session.
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          </AnimatedContainer>
         </form>
       </Form>
     </section>

@@ -8,6 +8,7 @@ import { useStudyStore } from "@/stores/study-store";
 import { StatCard } from "@/components/ui/stat-card";
 import { saveStudySession } from "@/lib/data/history";
 import { CheckCircle, Clock3, Target, XCircle } from "lucide-react";
+import { AnimatedContainer } from "@/components/animated-container";
 
 function formatDuration(totalMinutes: number) {
   const safeMinutes = Math.max(0, totalMinutes);
@@ -96,47 +97,53 @@ export default function StudyResultPage() {
         title="Study Session Results"
         description="Here's how you did in this session."
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {stats.map((stat) => (
-          <StatCard
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            icon={stat.icon}
-          />
-        ))}
-      </div>
-      <div className="mt-4 rounded-lg border bg-card p-4">
-        <h2 className="text-sm font-medium text-muted-foreground">FSRS Response Breakdown</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {fsrsResponseStats.map((item) => (
-            <div key={item.label} className="rounded-md border bg-background p-3">
-              <div className="text-sm text-muted-foreground">{item.label}</div>
-              <div className="mt-1 text-2xl font-semibold">{item.value}</div>
-            </div>
+      <AnimatedContainer delay={0.05}>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {stats.map((stat) => (
+            <StatCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+            />
           ))}
         </div>
-      </div>
-      <div className="mt-6 flex flex-wrap justify-end gap-2">
-        <Link href={deckId ? `/decks/${deckId}` : "/decks"}>
-          <Button variant="outline" onClick={resetProgress}>
-            Back to Deck
-          </Button>
-        </Link>
-        <Link href="/study">
-          <Button variant="outline" onClick={resetProgress}>
-            Study Again
-          </Button>
-        </Link>
-        <Link href="/history">
-          <Button variant="secondary" onClick={resetProgress}>
-            View History
-          </Button>
-        </Link>
-        <Link href="/dashboard">
-          <Button onClick={resetProgress}>Back to Dashboard</Button>
-        </Link>
-      </div>
+      </AnimatedContainer>
+      <AnimatedContainer delay={0.1}>
+        <div className="mt-4 rounded-lg border bg-card p-4">
+          <h2 className="text-sm font-medium text-muted-foreground">FSRS Response Breakdown</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {fsrsResponseStats.map((item) => (
+              <div key={item.label} className="rounded-md border bg-background p-3">
+                <div className="text-sm text-muted-foreground">{item.label}</div>
+                <div className="mt-1 text-2xl font-semibold">{item.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </AnimatedContainer>
+      <AnimatedContainer delay={0.15}>
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          <Link href={deckId ? `/decks/${deckId}` : "/decks"}>
+            <Button variant="outline" onClick={resetProgress}>
+              Back to Deck
+            </Button>
+          </Link>
+          <Link href="/study">
+            <Button variant="outline" onClick={resetProgress}>
+              Study Again
+            </Button>
+          </Link>
+          <Link href="/history">
+            <Button variant="secondary" onClick={resetProgress}>
+              View History
+            </Button>
+          </Link>
+          <Link href="/dashboard">
+            <Button onClick={resetProgress}>Back to Dashboard</Button>
+          </Link>
+        </div>
+      </AnimatedContainer>
     </section>
   );
 }

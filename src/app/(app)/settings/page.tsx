@@ -31,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { getUserSettings, updateUserSettings } from "@/lib/data/settings";
 import { useStudyStore } from "@/stores/study-store";
+import { AnimatedContainer } from "@/components/animated-container";
 
 const settingsSchema = z.object({
   newLimit: z.number().min(0).max(200),
@@ -130,157 +131,167 @@ export default function SettingsPage() {
 
       <Form {...form}>
         <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
-          <Card>
-            <CardHeader>
-              <CardTitle>学習設定</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="newLimit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>新規上限</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        value={field.value}
-                        onChange={(e) =>
-                          field.onChange(
-                            Number.isNaN(e.target.valueAsNumber)
-                              ? 0
-                              : e.target.valueAsNumber,
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="reviewLimit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>レビュー上限</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        value={field.value}
-                        onChange={(e) =>
-                          field.onChange(
-                            Number.isNaN(e.target.valueAsNumber)
-                              ? 0
-                              : e.target.valueAsNumber,
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="order"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
-                    <FormLabel>学習順序</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+          <AnimatedContainer delay={0.05}>
+            <Card>
+              <CardHeader>
+                <CardTitle>学習設定</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="newLimit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>新規上限</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="学習順序を選択" />
-                        </SelectTrigger>
+                        <Input
+                          type="number"
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(
+                              Number.isNaN(e.target.valueAsNumber)
+                                ? 0
+                                : e.target.valueAsNumber,
+                            )
+                          }
+                        />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="DUE_ASC">
-                          Due Date (Earliest First)
-                        </SelectItem>
-                        <SelectItem value="RANDOM">Random</SelectItem>
-                        <SelectItem value="CREATED_DESC">
-                          Newest Words First
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="allowTypingCorrectnessOverride"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2 flex items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-1">
-                      <FormLabel>Typing Mode Correctness Override</FormLabel>
-                      <p className="text-xs text-muted-foreground">
-                        Allow manually changing Correct/Incorrect after auto text-match judgment.
-                      </p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>表示設定</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="theme"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>テーマ</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={(val) => {
-                        field.onChange(val);
-                        setTheme(val); // UIの見た目のみ即時更新
-                      }}
-                    >
+                <FormField
+                  control={form.control}
+                  name="reviewLimit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>レビュー上限</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="テーマを選択" />
-                        </SelectTrigger>
+                        <Input
+                          type="number"
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(
+                              Number.isNaN(e.target.valueAsNumber)
+                                ? 0
+                                : e.target.valueAsNumber,
+                            )
+                          }
+                        />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="system">System</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? "保存中..." : "保存"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => signOut({ callbackUrl: "/" })}
-            >
-              サインアウト
-            </Button>
-          </div>
+                <FormField
+                  control={form.control}
+                  name="order"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>学習順序</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="学習順序を選択" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="DUE_ASC">
+                            Due Date (Earliest First)
+                          </SelectItem>
+                          <SelectItem value="RANDOM">Random</SelectItem>
+                          <SelectItem value="CREATED_DESC">
+                            Newest Words First
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="allowTypingCorrectnessOverride"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2 flex items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-1">
+                        <FormLabel>Typing Mode Correctness Override</FormLabel>
+                        <p className="text-xs text-muted-foreground">
+                          Allow manually changing Correct/Incorrect after auto
+                          text-match judgment.
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </AnimatedContainer>
+
+          <AnimatedContainer delay={0.1}>
+            <Card>
+              <CardHeader>
+                <CardTitle>表示設定</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="theme"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>テーマ</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          setTheme(val); // UIの見た目のみ即時更新
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="テーマを選択" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="light">Light</SelectItem>
+                          <SelectItem value="dark">Dark</SelectItem>
+                          <SelectItem value="system">System</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </AnimatedContainer>
+
+          <AnimatedContainer delay={0.15}>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="submit" disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? "保存中..." : "保存"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                サインアウト
+              </Button>
+            </div>
+          </AnimatedContainer>
         </form>
       </Form>
     </section>

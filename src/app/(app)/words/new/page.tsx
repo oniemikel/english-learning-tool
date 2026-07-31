@@ -11,6 +11,7 @@ import { PageTitle } from "@/components/ui/page-title";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listDecks } from "@/lib/data/decks";
 import { createWord } from "@/lib/data/words";
+import { AnimatedContainer } from "@/components/animated-container";
 
 export default function WordCreatePage() {
   const router = useRouter();
@@ -33,7 +34,9 @@ export default function WordCreatePage() {
           title="単語作成"
           description="単語の基本情報と詳細情報をまとめて登録できます。"
         />
-        <Skeleton className="mx-auto h-96 w-full max-w-2xl" />
+        <AnimatedContainer delay={0.05}>
+          <Skeleton className="mx-auto h-96 w-full max-w-2xl" />
+        </AnimatedContainer>
       </section>
     );
   }
@@ -61,19 +64,21 @@ export default function WordCreatePage() {
         title="単語作成"
         description="単語の基本情報と詳細情報をまとめて登録できます。"
       />
-      <WordForm
-        title="単語情報"
-        deckOptions={decksQuery.data}
-        initialData={{
-          ...wordFormDefaultValues,
-          deckIds: [params.get("deckId") || decksQuery.data[0].id],
-        }}
-        onSubmit={(values) => mutation.mutate(values)}
-        onCancel={() => startNavigation(() => router.push("/words"))}
-        isSubmitting={mutation.isPending || isPendingNavigation}
-        submitButtonText="作成"
-        cancelPending={isPendingNavigation}
-      />
+      <AnimatedContainer delay={0.05}>
+        <WordForm
+          title="単語情報"
+          deckOptions={decksQuery.data}
+          initialData={{
+            ...wordFormDefaultValues,
+            deckIds: [params.get("deckId") || decksQuery.data[0].id],
+          }}
+          onSubmit={(values) => mutation.mutate(values)}
+          onCancel={() => startNavigation(() => router.push("/words"))}
+          isSubmitting={mutation.isPending || isPendingNavigation}
+          submitButtonText="作成"
+          cancelPending={isPendingNavigation}
+        />
+      </AnimatedContainer>
     </section>
   );
 }

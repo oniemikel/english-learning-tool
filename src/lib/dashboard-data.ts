@@ -15,6 +15,20 @@ type WeeklyStatPoint = {
   weekdayInitial: string;
 };
 
+export type StudyHeatmapPoint = {
+  date: string;
+  count: number;
+};
+
+type WeakWord = {
+  id: string;
+  word: string;
+  meaning: string;
+  accuracy: number;
+  deckName?: string;
+  nextReview: string | null;
+};
+
 function toDateKey(parts: CalendarDateParts) {
   return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
 }
@@ -93,6 +107,12 @@ function getRecentDayParts(timeZone: string, days: number) {
   return Array.from({ length: days }, (_, index) => addDays(startParts, index));
 }
 
+function getDateNDaysAgo(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date;
+}
+
 export async function getDashboardPageData() {
   const session = await auth();
   const userId = session?.user?.id;
@@ -116,6 +136,8 @@ export async function getDashboardPageData() {
     allDecks,
     recentHistory,
     reviewsWidget,
+    studyHeatmap,
+    weakWords,
   ] = await Promise.all([
     prisma.deck.count({ where: { userId, deletedAt: null } }),
     prisma.word.count({
@@ -210,6 +232,8 @@ export async function getDashboardPageData() {
       },
     }),
     getReviewsWidgetData(userId),
+    getStudyHeatmapData(userId),
+    getWeakWordsData(userId),
   ]);
 
   type DeckItem = (typeof allDecks)[number];
@@ -233,6 +257,9 @@ export async function getDashboardPageData() {
     reviewedAt: log.reviewedAt,
   }));
 
+  // 1日の目標数 (設定されていなければデフォルト20)
+  const dailyTarget = userSettings?.dailyNewCards || 20;
+
   return {
     user: {
       name: session.user.name || 'User',
@@ -246,7 +273,7 @@ export async function getDashboardPageData() {
     todayProgress: {
       newWords: newWordsStudiedToday,
       reviews: todayReviewCount,
-      target: userSettings?.dailyNewCards || 100,
+      target: dailyTarget,
     },
     studyGoals: weeklyStats.map((stat: WeeklyStatPoint) => ({
       day: stat.weekdayLabel + '.',
@@ -257,10 +284,161 @@ export async function getDashboardPageData() {
       labels: weeklyStats.map((stat: WeeklyStatPoint) => stat.weekdayLabel),
       series: [weeklyStats.map((stat: WeeklyStatPoint) => stat.reviewCount)],
     },
+    studyHeatmap: {
+      data: studyHeatmap,
+      maxCount: dailyTarget, // ★ ヒートマップ描画用に上限値をセット
+    },
+    weakWords,
     deckQuickView,
     recentHistory: formattedRecentHistory,
     reviewsWidget,
   };
+}
+
+async function getStudyHeatmapData(userId: string): Promise<StudyHeatmapPoint[]> {
+  const dayParts = getRecentDayParts(DASHBOARD_TIME_ZONE, 365);
+  const start = getStartOfDayUtc(dayParts[0], DASHBOARD_TIME_ZONE);
+  const end = getStartOfDayUtc(
+    addDays(dayParts[dayParts.length - 1], 1),
+    DASHBOARD_TIME_ZONE,
+  );
+
+  const logs = await prisma.reviewLog.findMany({
+    where: {
+      userId,
+      reviewedAt: {
+        gte: start,
+        lt: end,
+      },
+    },
+    select: {
+      reviewedAt: true,
+    },
+  });
+
+  const countByDateKey = new Map<string, number>();
+  for (const log of logs) {
+    const key = toDateKey(
+      getDatePartsInTimeZone(log.reviewedAt, DASHBOARD_TIME_ZONE),
+    );
+    countByDateKey.set(key, (countByDateKey.get(key) ?? 0) + 1);
+  }
+
+  return dayParts.map((parts) => {
+    const date = toDateKey(parts);
+    return {
+      date,
+      count: countByDateKey.get(date) ?? 0,
+    };
+  });
+}
+
+async function getWeakWordsData(userId: string): Promise<WeakWord[]> {
+  const now = new Date();
+  const lowStabilityThreshold = 3;
+  const recentWindowStart = getDateNDaysAgo(180);
+
+  const candidates = await prisma.fSRSState.findMany({
+    where: {
+      state: { not: 'NEW' },
+      card: {
+        word: {
+          deletedAt: null,
+          decks: {
+            some: {
+              userId,
+              deletedAt: null,
+            },
+          },
+        },
+      },
+      OR: [
+        { due: { lte: now } },
+        { stability: { lte: lowStabilityThreshold } },
+        { lapses: { gte: 1 } },
+      ],
+    },
+    orderBy: [{ due: 'asc' }, { stability: 'asc' }, { lapses: 'desc' }],
+    take: 100,
+    select: {
+      due: true,
+      stability: true,
+      cardId: true,
+      card: {
+        select: {
+          word: {
+            select: {
+              id: true,
+              word: true,
+              meaning: true,
+              decks: {
+                where: { userId, deletedAt: null },
+                orderBy: { updatedAt: 'desc' },
+                take: 1,
+                select: { title: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (candidates.length === 0) {
+    return [];
+  }
+
+  const candidateCardIds = candidates.map((candidate) => candidate.cardId);
+  const reviewLogs = await prisma.reviewLog.findMany({
+    where: {
+      userId,
+      cardId: { in: candidateCardIds },
+      reviewedAt: { gte: recentWindowStart },
+    },
+    select: {
+      cardId: true,
+      isCorrect: true,
+    },
+  });
+
+  const statsByCardId = new Map<string, { total: number; correct: number }>();
+  for (const log of reviewLogs) {
+    const current = statsByCardId.get(log.cardId) ?? { total: 0, correct: 0 };
+    current.total += 1;
+    if (log.isCorrect) {
+      current.correct += 1;
+    }
+    statsByCardId.set(log.cardId, current);
+  }
+
+  const scored = candidates.map((candidate) => {
+    const stats = statsByCardId.get(candidate.cardId);
+    const accuracy =
+      stats && stats.total > 0
+        ? Math.round((stats.correct / stats.total) * 100)
+        : 0;
+    const isDue = candidate.due <= now;
+    const stabilityPenalty = Math.max(0, Math.round(10 - candidate.stability));
+    const score =
+      (isDue ? 200 : 0) +
+      (100 - Math.min(accuracy, 100)) +
+      stabilityPenalty;
+
+    return {
+      id: candidate.card.word.id,
+      word: candidate.card.word.word,
+      meaning: candidate.card.word.meaning,
+      accuracy,
+      deckName: candidate.card.word.decks[0]?.title,
+      nextReview: candidate.due.toISOString(),
+      score,
+    };
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
+    .map(({ score: _score, ...word }) => word);
 }
 
 async function getReviewsWidgetData(userId: string) {

@@ -168,6 +168,7 @@ Prisma --> DB
 | **Zustand**                      | `v5.0.14`  | クライアント状態管理                |
 | **TanStack Query (React Query)** | `v5.101.4` | データ取得・非同期状態管理          |
 | **Lucide React**                 | `v1.26.0`  | アイコンライブラリ                  |
+| **framer-motion**                | `v12.43.0` | アニメーション                      |
 
 ---
 

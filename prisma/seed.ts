@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { reseedDemoUserData } from '../src/lib/demo-seed';
+import { reseedDemoUserData } from '../src/lib/reset_cron/demo-seed';
 
 const prisma = new PrismaClient();
 

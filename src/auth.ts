@@ -3,7 +3,7 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { authConfig } from './auth.config';
-import { DEMO_USER_EMAIL, ensureDemoUserData } from '@/lib/demo-seed';
+import { DEMO_USER_EMAIL, ensureDemoUserData } from '@/lib/reset_cron/demo-seed';
 import { prisma } from '@/lib/prisma';
 
 export const { auth, handlers, signIn, signOut } = NextAuth({

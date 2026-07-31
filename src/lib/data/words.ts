@@ -202,9 +202,9 @@ export async function getWordById(input: string | { id: string }) {
     meaning: word.meaning,
     pronunciation: word.pronunciation ?? null,
     partOfSpeech: word.partOfSpeech ?? null,
-    definition: word.meaning, // ページ側の参照用に定義
-    example: firstExample,     // ページ側の参照用に定義
-    etymology: null,          // 語源フィールドがDBにない場合はnull
+    definition: word.meaning,
+    example: firstExample,
+    etymology: null,
     state: word.card?.fsrsState?.state ?? 'NEW',
     nextReview: word.card?.fsrsState?.due.toISOString() ?? null,
     deckIds: word.decks.map((deck) => deck.id),
@@ -256,7 +256,6 @@ export async function createWord(input: unknown) {
         : undefined,
       card: {
         create: {
-          userId,
           fsrsState: {
             create: {
               state: 'NEW',
@@ -309,9 +308,14 @@ export async function updateWord(input: unknown) {
 }
 
 /**
- * 公開デッキの単語一覧取得
+ * 公開デッキの単語一覧取得（文字列・オブジェクト形式両対応）
  */
-export async function listPublicWords(deckId: string) {
+export async function listPublicWords(
+  input: string | { deckId: string; limit?: number },
+) {
+  const deckId = typeof input === 'string' ? input : input.deckId;
+  const limit = typeof input === 'string' ? undefined : input.limit;
+
   const words = await prisma.word.findMany({
     where: {
       deletedAt: null,
@@ -331,12 +335,14 @@ export async function listPublicWords(deckId: string) {
     orderBy: {
       createdAt: 'desc',
     },
+    take: limit,
   });
 
   return words.map((word) => ({
     id: word.id,
     word: word.word,
     meaning: word.meaning,
+    translation: word.meaning,
     pronunciation: word.pronunciation,
     partOfSpeech: word.partOfSpeech,
     example: word.exampleSentences[0]?.english ?? '',

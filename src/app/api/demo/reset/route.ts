@@ -1,5 +1,5 @@
 import { auth } from '@/auth';
-import { DEMO_USER_EMAIL, reseedDemoUserData } from '@/lib/demo-seed';
+import { DEMO_USER_EMAIL, reseedDemoUserData } from '@/lib/reset_cron/demo-seed';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 

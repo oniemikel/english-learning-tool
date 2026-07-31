@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type {
   FSRSStateType,
   Prisma,
@@ -13,12 +14,12 @@ export const DEMO_USER_NAME = 'Demo User';
 export const DEMO_PROVIDER_ACCOUNT_ID = 'demo-user';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const DEMO_AVATAR_URL = 'https://api.dicebear.com/9.x/identicon/svg?seed=demo-user';
+const DEMO_AVATAR_URL =
+  'https://api.dicebear.com/9.x/identicon/svg?seed=demo-user';
 
-// 🚀 増強パラメータ
-const DEMO_DECK_COUNT = 12;            // 8 -> 12 デッキ
-const DEMO_WORDS_PER_DECK = 100;       // 45 -> 100 単語/デッキ（合計 1200語）
-const DEMO_HISTORY_DAYS = 365;         // 1年分
+const DEMO_DECK_COUNT = 12;
+const DEMO_WORDS_PER_DECK = 100; // 1,200語
+const DEMO_HISTORY_DAYS = 365;
 const CREATE_MANY_BATCH_SIZE = 1000;
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -40,78 +41,18 @@ type DemoDeckSeed = {
 };
 
 const DEMO_DECK_BLUEPRINTS = [
-  {
-    title: 'Daily Conversation Lab',
-    description: 'Practical words for real-life communication.',
-    color: '#0EA5E9',
-    icon: 'MessageCircle',
-  },
-  {
-    title: 'Business Mail Sprint',
-    description: 'Vocabulary for concise and polite business writing.',
-    color: '#22C55E',
-    icon: 'Briefcase',
-  },
-  {
-    title: 'Travel and Culture',
-    description: 'Words for airports, hotels, sightseeing, and local life.',
-    color: '#F97316',
-    icon: 'Plane',
-  },
-  {
-    title: 'Tech Product English',
-    description: 'Terms used in product development and software teams.',
-    color: '#8B5CF6',
-    icon: 'Cpu',
-  },
-  {
-    title: 'Academic Reading Kit',
-    description: 'High-frequency words from articles and lecture material.',
-    color: '#EF4444',
-    icon: 'BookOpen',
-  },
-  {
-    title: 'News and Society',
-    description: 'Useful vocabulary for current events and discussions.',
-    color: '#EAB308',
-    icon: 'Newspaper',
-  },
-  {
-    title: 'Interview and Career',
-    description: 'Language for interviews, resumes, and career growth.',
-    color: '#14B8A6',
-    icon: 'UserRoundSearch',
-  },
-  {
-    title: 'Presentation Booster',
-    description: 'Expressions for structured and persuasive presentations.',
-    color: '#6366F1',
-    icon: 'Presentation',
-  },
-  {
-    title: 'Advanced Science & Tech',
-    description: 'Specialized terms for modern engineering and research.',
-    color: '#EC4899',
-    icon: 'FlaskConical',
-  },
-  {
-    title: 'Finance & Global Markets',
-    description: 'Essential terms for economics, trading, and fintech.',
-    color: '#10B981',
-    icon: 'TrendingUp',
-  },
-  {
-    title: 'Idioms & Natural Phrases',
-    description: 'Native-like expressions to level up conversational fluency.',
-    color: '#F59E0B',
-    icon: 'Sparkles',
-  },
-  {
-    title: 'TOEIC / IELTS High Tier',
-    description: 'Targeted vocabulary for standard proficiency exams.',
-    color: '#3B82F6',
-    icon: 'GraduationCap',
-  },
+  { title: 'Daily Conversation Lab', description: 'Practical words for real-life communication.', color: '#0EA5E9', icon: 'MessageCircle' },
+  { title: 'Business Mail Sprint', description: 'Vocabulary for concise and polite business writing.', color: '#22C55E', icon: 'Briefcase' },
+  { title: 'Travel and Culture', description: 'Words for airports, hotels, sightseeing, and local life.', color: '#F97316', icon: 'Plane' },
+  { title: 'Tech Product English', description: 'Terms used in product development and software teams.', color: '#8B5CF6', icon: 'Cpu' },
+  { title: 'Academic Reading Kit', description: 'High-frequency words from articles and lecture material.', color: '#EF4444', icon: 'BookOpen' },
+  { title: 'News and Society', description: 'Useful vocabulary for current events and discussions.', color: '#EAB308', icon: 'Newspaper' },
+  { title: 'Interview and Career', description: 'Language for interviews, resumes, and career growth.', color: '#14B8A6', icon: 'UserRoundSearch' },
+  { title: 'Presentation Booster', description: 'Expressions for structured and persuasive presentations.', color: '#6366F1', icon: 'Presentation' },
+  { title: 'Advanced Science & Tech', description: 'Specialized terms for modern engineering and research.', color: '#EC4899', icon: 'FlaskConical' },
+  { title: 'Finance & Global Markets', description: 'Essential terms for economics, trading, and fintech.', color: '#10B981', icon: 'TrendingUp' },
+  { title: 'Idioms & Natural Phrases', description: 'Native-like expressions to level up conversational fluency.', color: '#F59E0B', icon: 'Sparkles' },
+  { title: 'TOEIC / IELTS High Tier', description: 'Targeted vocabulary for standard proficiency exams.', color: '#3B82F6', icon: 'GraduationCap' },
 ] as const;
 
 const POS_LABELS = ['noun', 'verb', 'adjective', 'adverb'];
@@ -299,85 +240,107 @@ async function createManyInChunks<T extends object>(
   }
 }
 
+/**
+ * デモユーザーの古いデータを安全に削除（他ユーザーを巻き込まないガード付き）
+ */
 async function clearDemoUserData(prisma: DbClient, userId: string) {
+  if (!userId) {
+    throw new Error('❌ userId is required for clearDemoUserData');
+  }
+
+  // 事故防止：全削除が起きないよう必ず userId 条件をつける
   await prisma.reviewLog.deleteMany({ where: { userId } });
   await prisma.dailyStatistic.deleteMany({ where: { userId } });
   await prisma.studyLog.deleteMany({ where: { userId } });
   await prisma.deck.deleteMany({ where: { userId } });
 }
 
+/**
+ * 高速版データシード処理（createMany を全面採用）
+ */
 async function seedDemoData(prisma: DbClient, userId: string) {
   const now = new Date();
   const demoDecks = createDemoDecks();
-  const createdDecks: { id: string }[] = [];
+
+  const deckRows: Prisma.DeckCreateManyInput[] = [];
+  const wordRows: Prisma.WordCreateManyInput[] = [];
+  const exampleRows: Prisma.ExampleSentenceCreateManyInput[] = [];
+  const cardRows: Prisma.CardCreateManyInput[] = [];
+  const fsrsRows: Prisma.FSRSStateCreateManyInput[] = [];
+
+  const createdDeckIds: string[] = [];
   const cardStates: Array<{ cardId: string; state: FSRSStateType }> = [];
 
+  // メモリ上で関係性を一度に構築する（ループ内の await を完全排除）
   for (let deckIndex = 0; deckIndex < demoDecks.length; deckIndex += 1) {
     const deckSeed = demoDecks[deckIndex];
-    const deck = await prisma.deck.create({
-      data: {
-        userId,
-        title: deckSeed.title,
-        description: deckSeed.description,
-        color: deckSeed.color,
-        icon: deckSeed.icon,
-        sortOrder: deckIndex,
-        updatedAt: new Date(now.getTime() - randomInt(0, 42) * DAY_MS),
-      },
-    });
+    const deckId = randomUUID();
+    createdDeckIds.push(deckId);
 
-    createdDecks.push({ id: deck.id });
+    deckRows.push({
+      id: deckId,
+      userId,
+      title: deckSeed.title,
+      description: deckSeed.description,
+      color: deckSeed.color,
+      icon: deckSeed.icon,
+      sortOrder: deckIndex,
+      updatedAt: new Date(now.getTime() - randomInt(0, 42) * DAY_MS),
+    });
 
     for (let localIndex = 0; localIndex < deckSeed.words.length; localIndex += 1) {
       const wordSeed = deckSeed.words[localIndex];
       const stateSeed = getRandomFsrsState(now);
+      const wordId = randomUUID();
+      const cardId = randomUUID();
 
-      const word = await prisma.word.create({
-        data: {
-          word: wordSeed.word,
-          meaning: wordSeed.meaning,
-          pronunciation: wordSeed.pronunciation,
-          partOfSpeech: wordSeed.partOfSpeech,
-          source: 'demo-seed',
-          decks: {
-            connect: {
-              id: deck.id,
-            },
-          },
-          exampleSentences: {
-            create: {
-              english: wordSeed.sentence,
-              japanese: 'デモ文のため和訳は省略',
-              sortOrder: 0,
-            },
-          },
-        },
+      wordRows.push({
+        id: wordId,
+        word: wordSeed.word,
+        meaning: wordSeed.meaning,
+        pronunciation: wordSeed.pronunciation,
+        partOfSpeech: wordSeed.partOfSpeech,
+        source: 'demo-seed',
       });
 
-      const card = await prisma.card.create({
-        data: {
-          wordId: word.id,
-          lastStudiedAt: stateSeed.lastReview,
-        },
+      exampleRows.push({
+        id: randomUUID(),
+        wordId,
+        english: wordSeed.sentence,
+        japanese: 'デモ文のため和訳は省略',
+        sortOrder: 0,
       });
 
-      await prisma.fSRSState.create({
-        data: {
-          cardId: card.id,
-          state: stateSeed.state,
-          due: stateSeed.due,
-          stability: stateSeed.stability,
-          difficulty: stateSeed.difficulty,
-          reps: stateSeed.reps,
-          lapses: stateSeed.lapses,
-          lastReview: stateSeed.lastReview,
-        },
+      cardRows.push({
+        id: cardId,
+        wordId,
+        lastStudiedAt: stateSeed.lastReview,
       });
 
-      cardStates.push({ cardId: card.id, state: stateSeed.state });
+      fsrsRows.push({
+        id: randomUUID(),
+        cardId,
+        state: stateSeed.state,
+        due: stateSeed.due,
+        stability: stateSeed.stability,
+        difficulty: stateSeed.difficulty,
+        reps: stateSeed.reps,
+        lapses: stateSeed.lapses,
+        lastReview: stateSeed.lastReview,
+      });
+
+      cardStates.push({ cardId, state: stateSeed.state });
     }
   }
 
+  // 1. デッキ・単語・カード一括挿入
+  await createManyInChunks((chunk) => prisma.deck.createMany({ data: chunk }), deckRows);
+  await createManyInChunks((chunk) => prisma.word.createMany({ data: chunk }), wordRows);
+  await createManyInChunks((chunk) => prisma.exampleSentence.createMany({ data: chunk }), exampleRows);
+  await createManyInChunks((chunk) => prisma.card.createMany({ data: chunk }), cardRows);
+  await createManyInChunks((chunk) => prisma.fSRSState.createMany({ data: chunk }), fsrsRows);
+
+  // 2. 履歴ログの一括構築
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
 
@@ -385,11 +348,9 @@ async function seedDemoData(prisma: DbClient, userId: string) {
   const studyLogs: Prisma.StudyLogCreateManyInput[] = [];
   const dailyStats: Prisma.DailyStatisticCreateManyInput[] = [];
 
-  // 365日分の履歴を生成
   for (let dayOffset = 0; dayOffset < DEMO_HISTORY_DAYS; dayOffset += 1) {
     const date = new Date(startOfToday.getTime() - dayOffset * DAY_MS);
     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-    // デッキ数・単語数増強に伴い、1日の復習数も現実的なボリューム（20〜80回）へアップ
     const reviewCount = isWeekend ? randomInt(15, 45) : randomInt(25, 80);
 
     let againCount = 0;
@@ -421,13 +382,9 @@ async function seedDemoData(prisma: DbClient, userId: string) {
         syncStatus: 'SYNCED' satisfies SyncStatus,
       });
 
-      if (rating === 'AGAIN') {
-        againCount += 1;
-      } else if (rating === 'HARD') {
-        hardCount += 1;
-      } else {
-        goodOrEasyCount += 1;
-      }
+      if (rating === 'AGAIN') againCount += 1;
+      else if (rating === 'HARD') hardCount += 1;
+      else goodOrEasyCount += 1;
     }
 
     const incorrectCount = againCount + Math.floor(hardCount * 0.5);
@@ -455,7 +412,7 @@ async function seedDemoData(prisma: DbClient, userId: string) {
 
       studyLogs.push({
         userId,
-        deckId: createdDecks[randomInt(0, createdDecks.length - 1)].id,
+        deckId: createdDeckIds[randomInt(0, createdDeckIds.length - 1)],
         mode: getRandomStudyMode(),
         solved,
         correct,
@@ -466,19 +423,10 @@ async function seedDemoData(prisma: DbClient, userId: string) {
     }
   }
 
-  // チャンク分割してDBへ高速挿入
-  await createManyInChunks(
-    (chunk) => prisma.reviewLog.createMany({ data: chunk }),
-    reviewLogs,
-  );
-  await createManyInChunks(
-    (chunk) => prisma.studyLog.createMany({ data: chunk }),
-    studyLogs,
-  );
-  await createManyInChunks(
-    (chunk) => prisma.dailyStatistic.createMany({ data: chunk, skipDuplicates: true }),
-    dailyStats,
-  );
+  // 3. ログの一括挿入
+  await createManyInChunks((chunk) => prisma.reviewLog.createMany({ data: chunk }), reviewLogs);
+  await createManyInChunks((chunk) => prisma.studyLog.createMany({ data: chunk }), studyLogs);
+  await createManyInChunks((chunk) => prisma.dailyStatistic.createMany({ data: chunk, skipDuplicates: true }), dailyStats);
 }
 
 export async function ensureDemoUserData(prisma: DbClient) {
@@ -521,37 +469,15 @@ export async function ensureDemoUserData(prisma: DbClient) {
     },
   });
 
-  const [deckCount, wordCount, historyCount] = await Promise.all([
-    prisma.deck.count({ where: { userId: user.id } }),
-    prisma.word.count({
-      where: {
-        decks: {
-          some: {
-            userId: user.id,
-          },
-        },
-      },
-    }),
-    prisma.dailyStatistic.count({ where: { userId: user.id } }),
-  ]);
-
-  // 新しい閾値（10デッキ以上、1000語以上、300日分以上のデータ）
-  const hasMinimumDemoDataset =
-    deckCount >= 10 &&
-    wordCount >= 1000 &&
-    historyCount >= 300;
-
-  if (!hasMinimumDemoDataset) {
-    await clearDemoUserData(prisma, user.id);
-    await seedDemoData(prisma, user.id);
-  }
-
   return user;
 }
 
 export async function reseedDemoUserData(prisma: DbClient) {
   const user = await ensureDemoUserData(prisma);
+
+  // データのクリアと生成を同一のトランザクション内で安全に完了させる
   await clearDemoUserData(prisma, user.id);
   await seedDemoData(prisma, user.id);
+
   return user;
 }

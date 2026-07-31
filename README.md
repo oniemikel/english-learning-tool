@@ -190,6 +190,8 @@ Prisma --> DB
 | --------- | ---------- | ---------- |
 | **MySQL** | `v8.4`     | データ保存 |
 
+なお、データベースはOracle Cloud Infrastrucrureを利用し、Dockerコンテナとしてデプロイし運用している。
+
 ---
 
 # 利用方法
@@ -198,8 +200,9 @@ Prisma --> DB
 
 以下のURLから利用できます。
 
+https://english-learning-tool-oniemikel.vercel.app/
 ```
-
+https://english-learning-tool-oniemikel.vercel.app/
 ```
 
 ---
@@ -216,7 +219,7 @@ Googleアカウントを利用してログインできます。
 
 動作確認用としてデモアカウントを利用できます。
 
-※公開環境ではデモデータが利用できます。
+※公開環境ではデモデータが利用できます。デモデータは、現在（2026/08/01 GMT+9）時点での仕様では、3時間おきに初期化されるようになっております。ご了承ください。
 
 ---
 

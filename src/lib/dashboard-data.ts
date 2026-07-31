@@ -212,19 +212,22 @@ export async function getDashboardPageData() {
     getReviewsWidgetData(userId),
   ]);
 
-  const recentDecks = allDecks.slice(0, 5).map((deck) => ({
+  type DeckItem = (typeof allDecks)[number];
+  type ReviewHistoryItem = (typeof recentHistory)[number];
+
+  const recentDecks = allDecks.slice(0, 5).map((deck: DeckItem) => ({
     id: deck.id,
     title: deck.title,
     wordCount: deck._count.words,
   }));
 
-  const deckQuickView = allDecks.map((deck) => ({
+  const deckQuickView = allDecks.map((deck: DeckItem) => ({
     id: deck.id,
     title: deck.title,
     wordCount: deck._count.words,
   }));
 
-  const formattedRecentHistory = recentHistory.map((log) => ({
+  const formattedRecentHistory = recentHistory.map((log: ReviewHistoryItem) => ({
     word: log.card.word.word,
     rating: log.rating,
     reviewedAt: log.reviewedAt,
@@ -245,15 +248,14 @@ export async function getDashboardPageData() {
       reviews: todayReviewCount,
       target: userSettings?.dailyNewCards || 100,
     },
-    studyGoals: weeklyStats.map((stat) => ({
-      day: stat.weekdayLabel+".",
-      // day: stat.weekdayInitial,
+    studyGoals: weeklyStats.map((stat: WeeklyStatPoint) => ({
+      day: stat.weekdayLabel + '.',
       progress: stat.reviewCount,
     })),
     recentDecks,
     weeklyActivity: {
-      labels: weeklyStats.map((stat) => stat.weekdayLabel),
-      series: [weeklyStats.map((stat) => stat.reviewCount)],
+      labels: weeklyStats.map((stat: WeeklyStatPoint) => stat.weekdayLabel),
+      series: [weeklyStats.map((stat: WeeklyStatPoint) => stat.reviewCount)],
     },
     deckQuickView,
     recentHistory: formattedRecentHistory,
@@ -372,5 +374,3 @@ async function getWeeklyStats(userId: string) {
     };
   });
 }
-
-

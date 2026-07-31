@@ -53,6 +53,10 @@ export async function listWords(input: unknown) {
       card: {
         include: {
           fsrsState: true,
+          reviewLogs: {
+            where: { userId },
+            select: { isCorrect: true }, // ★ isCorrect のみをシンプルに取得
+          },
         },
       },
     },
@@ -62,19 +66,28 @@ export async function listWords(input: unknown) {
     take: limit,
   });
 
-  return words.map((word) => ({
-    id: word.id,
-    word: word.word,
-    translation: word.meaning,
-    partOfSpeech: word.partOfSpeech,
-    nextReview: word.card?.fsrsState?.due.toISOString() ?? null,
-    deckIds: word.decks.map((deck) => deck.id),
-    decks: word.decks.map((deck) => ({
-      id: deck.id,
-      name: deck.title,
-    })),
-    accuracy: 0, // Placeholder
-  }));
+  return words.map((word) => {
+    const logs = word.card?.reviewLogs ?? [];
+    const totalReviews = logs.length;
+    const correctCount = logs.filter((log) => log.isCorrect).length;
+
+    const accuracy =
+      totalReviews > 0 ? Math.round((correctCount / totalReviews) * 100) : 0;
+
+    return {
+      id: word.id,
+      word: word.word,
+      translation: word.meaning,
+      partOfSpeech: word.partOfSpeech,
+      nextReview: word.card?.fsrsState?.due.toISOString() ?? null,
+      deckIds: word.decks.map((deck) => deck.id),
+      decks: word.decks.map((deck) => ({
+        id: deck.id,
+        name: deck.title,
+      })),
+      accuracy,
+    };
+  });
 }
 
 const ListPublicWordsSchema = z.object({

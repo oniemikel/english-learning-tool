@@ -299,6 +299,7 @@ async function seedDemoData(prisma: DbClient, userId: string) {
 
       wordRows.push({
         id: wordId,
+        userId,
         word: wordSeed.word,
         meaning: wordSeed.meaning,
         pronunciation: wordSeed.pronunciation,

@@ -421,6 +421,7 @@ export async function clonePublicDeck(input: unknown) {
     for (const sourceWord of sourceDeck.words) {
       const word = await tx.word.create({
         data: {
+          userId: deck.userId,
           word: sourceWord.word,
           pronunciation: sourceWord.pronunciation,
           partOfSpeech: sourceWord.partOfSpeech,

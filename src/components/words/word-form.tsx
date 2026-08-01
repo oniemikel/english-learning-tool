@@ -30,7 +30,7 @@ export const wordFormSchema = z.object({
   word: z.string().trim().min(1, "英単語は必須です").max(100),
   translation: z.string().trim().min(1, "日本語訳は必須です").max(500),
   partOfSpeech: z.string().min(1, "品詞は必須です"),
-  deckIds: z.array(z.string().min(1)).min(1, "デッキは1つ以上選択してください"),
+  deckIds: z.array(z.string()),
   definition: z
     .string()
     .trim()
@@ -158,41 +158,43 @@ export function WordForm({
               name="deckIds"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>デッキ（複数選択可）</FormLabel>
+                  <FormLabel>デッキ（任意）</FormLabel>
                   <FormControl>
                     <div className="space-y-3 rounded-(--radius-control) border p-3">
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {deckOptions.map((deck) => {
-                          const isSelected =
-                            field.value?.includes(deck.id) ?? false;
+                      {deckOptions.length > 0 ? (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {deckOptions.map((deck) => {
+                            const isSelected =
+                              field.value?.includes(deck.id) ?? false;
 
-                          return (
-                            <label
-                              key={deck.id}
-                              className="flex cursor-pointer items-center gap-2 rounded-(--radius-control) border px-3 py-2 text-sm"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(event) => {
-                                  const currentValues = field.value ?? [];
-                                  if (event.target.checked) {
-                                    field.onChange([...currentValues, deck.id]);
-                                    return;
-                                  }
+                            return (
+                              <label
+                                key={deck.id}
+                                className="flex cursor-pointer items-center gap-2 rounded-(--radius-control) border px-3 py-2 text-sm"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(event) => {
+                                    const currentValues = field.value ?? [];
+                                    if (event.target.checked) {
+                                      field.onChange([...currentValues, deck.id]);
+                                      return;
+                                    }
 
-                                  field.onChange(
-                                    currentValues.filter(
-                                      (id) => id !== deck.id,
-                                    ),
-                                  );
-                                }}
-                              />
-                              <span>{deck.name}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
+                                    field.onChange(
+                                      currentValues.filter(
+                                        (id) => id !== deck.id,
+                                      ),
+                                    );
+                                  }}
+                                />
+                                <span>{deck.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : <p className="text-sm text-muted-foreground">利用可能なデッキがありません。</p>}
                       {field.value && field.value.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {field.value.map((deckId) => {

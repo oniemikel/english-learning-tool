@@ -15,7 +15,7 @@ const ListWordsSchema = z.object({
 
 // ベースとなるオブジェクトスキーマ (.refine をかける前の状態)
 const BaseWordSchema = z.object({
-  deckIds: z.array(z.string()).min(1, 'At least one Deck ID is required'),
+  deckIds: z.array(z.string()).default([]),
   word: z.string().min(1, 'Word is required'),
   translation: z.string().optional(),
   meaning: z.string().optional(),
@@ -53,14 +53,19 @@ export async function listWords(input: unknown) {
   const trimmedQuery = query?.trim();
 
   const where = {
-    decks: {
-      some: {
-        userId,
-        deletedAt: null,
-        ...(deckId ? { id: deckId } : {}),
-      },
-    },
+    userId,
     deletedAt: null,
+    ...(deckId
+      ? {
+          decks: {
+            some: {
+              id: deckId,
+              userId,
+              deletedAt: null,
+            },
+          },
+        }
+      : {}),
     ...(trimmedQuery
       ? {
           OR: [
@@ -151,13 +156,8 @@ export async function getWordById(input: string | { id: string }) {
   const word = await prisma.word.findFirst({
     where: {
       id: wordId,
+      userId,
       deletedAt: null,
-      decks: {
-        some: {
-          userId,
-          deletedAt: null,
-        },
-      },
     },
     include: {
       exampleSentences: {
@@ -241,29 +241,42 @@ export async function createWord(input: unknown) {
 
   const data = CreateWordSchema.parse(input);
   const meaningValue = data.translation || data.meaning || '';
+  const deckIds = [...new Set(data.deckIds)];
 
-  // 指定されたデッキすべてがユーザー自身のものか確認
-  const userDecks = await prisma.deck.findMany({
-    where: {
-      id: { in: data.deckIds },
-      userId,
-      deletedAt: null,
-    },
-  });
+  let userDecks: Array<{ id: string }> = [];
 
-  if (userDecks.length === 0) {
-    throw new Error('Decks not found or unauthorized.');
+  if (deckIds.length > 0) {
+    // 指定されたデッキすべてがユーザー自身のものか確認
+    userDecks = await prisma.deck.findMany({
+      where: {
+        id: { in: deckIds },
+        userId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (userDecks.length !== deckIds.length) {
+      throw new Error('Decks not found or unauthorized.');
+    }
   }
 
   const newWord = await prisma.word.create({
     data: {
+      userId,
       word: data.word,
       meaning: meaningValue,
       pronunciation: data.pronunciation,
       partOfSpeech: data.partOfSpeech,
-      decks: {
-        connect: userDecks.map((deck) => ({ id: deck.id })),
-      },
+      ...(deckIds.length > 0
+        ? {
+            decks: {
+              connect: userDecks.map((deck) => ({ id: deck.id })),
+            },
+          }
+        : {}),
       exampleSentences: data.example
         ? {
             create: {
@@ -304,13 +317,48 @@ export async function updateWord(input: unknown) {
   const existingWord = await prisma.word.findFirst({
     where: {
       id: data.id,
+      userId,
       deletedAt: null,
-      decks: { some: { userId, deletedAt: null } },
     },
   });
 
   if (!existingWord) {
     throw new Error('Word not found or unauthorized.');
+  }
+
+  let deckSetData:
+    | {
+        decks: {
+          set: Array<{ id: string }>;
+        };
+      }
+    | undefined;
+
+  if (data.deckIds !== undefined) {
+    const deckIds = [...new Set(data.deckIds)];
+
+    if (deckIds.length > 0) {
+      const userDecks = await prisma.deck.findMany({
+        where: {
+          id: { in: deckIds },
+          userId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (userDecks.length !== deckIds.length) {
+        throw new Error('Decks not found or unauthorized.');
+      }
+    }
+
+    deckSetData = {
+      decks: {
+        set: deckIds.map((id) => ({ id })),
+      },
+    };
   }
 
   const updatedWord = await prisma.word.update({
@@ -320,13 +368,7 @@ export async function updateWord(input: unknown) {
       meaning: meaningValue,
       pronunciation: data.pronunciation,
       partOfSpeech: data.partOfSpeech,
-      ...(data.deckIds
-        ? {
-            decks: {
-              set: data.deckIds.map((id) => ({ id })),
-            },
-          }
-        : {}),
+      ...(deckSetData ?? {}),
     },
   });
 

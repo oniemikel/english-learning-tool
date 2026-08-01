@@ -19,6 +19,7 @@ model User {
   providerAccountId String           @unique @db.VarChar(255)
   statistics        DailyStatistic[]
   decks             Deck[]
+  words             Word[]
   reviewLogs        ReviewLog[]
   studyLogs         StudyLog[]
   setting           UserSetting?
@@ -67,6 +68,8 @@ model Deck {
 
 model Word {
   id               String            @id @default(uuid()) @db.Char(36)
+  userId           String            @db.Char(36)
+
   word             String            @db.VarChar(150)
   pronunciation    String?           @db.VarChar(255)
   partOfSpeech     String?           @db.VarChar(50)
@@ -77,6 +80,7 @@ model Word {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   deletedAt        DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   antonyms         Antonym[]
   card             Card?
   collocations     Collocation[]
@@ -84,6 +88,8 @@ model Word {
   synonyms         Synonym[]
   decks            Deck[]            @relation("DeckToWord")
 
+  @@unique([userId, word])
+  @@index([userId])
   @@index([word])
   @@index([partOfSpeech])
   @@map("Word")

@@ -376,6 +376,39 @@ export async function updateWord(input: unknown) {
 }
 
 /**
+ * 単語の削除
+ */
+export async function deleteWord(id: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('You must be signed in to delete a word.');
+  }
+  const userId = session.user.id;
+
+  const word = await prisma.word.findFirst({
+    where: {
+      id,
+      userId,
+    },
+  });
+
+  if (!word) {
+    throw new Error("Word not found or you don't have permission to delete it.");
+  }
+
+  await prisma.word.update({
+    where: {
+      id,
+    },
+    data: {
+      deletedAt: new Date(),
+    },
+  });
+
+  return { id };
+}
+
+/**
  * 公開デッキの単語一覧取得（文字列・オブジェクト形式両対応）
  */
 export async function listPublicWords(

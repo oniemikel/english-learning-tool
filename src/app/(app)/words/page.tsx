@@ -1,14 +1,21 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Trash2,
+  Edit,
+} from "lucide-react";
 import { useState, useTransition, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageTitle } from "@/components/ui/page-title";
-import { listWords } from "@/lib/data/words";
+import { listWords, deleteWord } from "@/lib/data/words";
 import { formatDate } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
@@ -19,19 +26,40 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { AnimatedContainer } from "@/components/animated-container";
 
 const PAGE_SIZE = 10;
 
+type WordListItem = Awaited<ReturnType<typeof listWords>>["items"][0];
+
 export default function WordsPage() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<WordListItem | null>(null);
   const [pendingWordId, setPendingWordId] = useState<string | null>(null);
   const [isNavigating, startNavigation] = useTransition();
   const debouncedQuery = useDebounce(query, 300);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setPage(1);
@@ -42,6 +70,25 @@ export default function WordsPage() {
     queryFn: () =>
       listWords({ query: debouncedQuery, page, pageSize: PAGE_SIZE }),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteWord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["words"] });
+      setIsDeleteDialogOpen(false);
+    },
+  });
+
+  const handleDeleteClick = (word: WordListItem) => {
+    setSelectedWord(word);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (selectedWord) {
+      deleteMutation.mutate(selectedWord.id);
+    }
+  };
 
   const totalPages = wordsQuery.data?.totalPages ?? 1;
   const totalCount = wordsQuery.data?.totalCount ?? 0;
@@ -115,6 +162,7 @@ export default function WordsPage() {
               <TableHead>Part of Speech</TableHead>
               <TableHead>Accuracy</TableHead>
               <TableHead>Next Review</TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -139,17 +187,20 @@ export default function WordsPage() {
                   <TableCell>
                     <Skeleton className="h-5 w-32" />
                   </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-8" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : wordsQuery.isError ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-destructive">
+                <TableCell colSpan={7} className="text-center text-destructive">
                   Could not load words.
                 </TableCell>
               </TableRow>
             ) : wordsQuery.data?.items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-48 text-center">
+                <TableCell colSpan={7} className="h-48 text-center">
                   <p className="font-semibold">No words found.</p>
                   {query ? (
                     <p className="text-muted-foreground">
@@ -200,6 +251,42 @@ export default function WordsPage() {
                   </TableCell>
                   <TableCell>{word.accuracy}%</TableCell>
                   <TableCell>{formatDate(word.nextReview)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenuItem
+                          onClick={() =>
+                            startNavigation(() =>
+                              router.push(`/words/${word.id}/edit`),
+                            )
+                          }
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(word)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -207,11 +294,36 @@ export default function WordsPage() {
         </Table>
       </AnimatedContainer>
 
-      {isNavigating ? (
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              word "{selectedWord?.word}" from your vocabulary.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {isNavigating && (
         <p className="mt-3 text-xs text-muted-foreground">
           Opening word details...
         </p>
-      ) : null}
+      )}
     </section>
   );
 }

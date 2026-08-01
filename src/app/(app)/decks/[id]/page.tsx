@@ -1,14 +1,21 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { PageTitle } from '@/components/ui/page-title';
 import { getDeckDetails } from '@/lib/data/decks';
-import { listWords } from '@/lib/data/words';
+import { listWords, deleteWord } from '@/lib/data/words';
 import { StatCard } from '@/components/ui/stat-card';
 import { Book, Check, Globe, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -21,6 +28,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,6 +51,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { AnimatedContainer } from '@/components/animated-container';
 
 const PAGE_SIZE = 10;
+type WordListItem = Awaited<ReturnType<typeof listWords>>['items'][0];
 
 export default function DeckDetailPage() {
   const params = useParams<{ id: string }>();
@@ -36,8 +60,11 @@ export default function DeckDetailPage() {
   const [page, setPage] = useState(1);
   const [pendingWordId, setPendingWordId] = useState<string | null>(null);
   const [isNavigating, startNavigation] = useTransition();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<WordListItem | null>(null);
   const debouncedQuery = useDebounce(query, 300);
   const id = params.id;
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setPage(1);
@@ -60,6 +87,28 @@ export default function DeckDetailPage() {
       }),
     enabled: !!id,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteWord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['words', { deckId: id }],
+      });
+      queryClient.invalidateQueries({ queryKey: ['deck', id] });
+      setIsDeleteDialogOpen(false);
+    },
+  });
+
+  const handleDeleteClick = (word: WordListItem) => {
+    setSelectedWord(word);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (selectedWord) {
+      deleteMutation.mutate(selectedWord.id);
+    }
+  };
 
   const deck = deckQuery.data;
   const totalPages = wordsQuery.data?.totalPages ?? 1;
@@ -132,7 +181,12 @@ export default function DeckDetailPage() {
       <AnimatedContainer>
         <div className="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (
-            <StatCard key={stat.title} title={stat.title} value={stat.value} icon={stat.icon} />
+            <StatCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+            />
           ))}
         </div>
       </AnimatedContainer>
@@ -147,7 +201,9 @@ export default function DeckDetailPage() {
           />
           {wordsQuery.data ? (
             <p className="text-sm text-muted-foreground">
-              Total: <span className="font-medium text-foreground">{totalCount}</span> words
+              Total:{' '}
+              <span className="font-medium text-foreground">{totalCount}</span>{' '}
+              words
             </p>
           ) : null}
         </div>
@@ -166,72 +222,123 @@ export default function DeckDetailPage() {
                   <TableHead>Translation</TableHead>
                   <TableHead>Part of Speech</TableHead>
                   <TableHead>Last Reviewed</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-              {wordsQuery.isLoading ? (
-                Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-5 w-24" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-24" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-16" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-32" />
+                {wordsQuery.isLoading ? (
+                  Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-5 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : wordsQuery.isError ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                      Could not load words.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : wordsQuery.isError ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    Could not load words.
-                  </TableCell>
-                </TableRow>
-              ) : wordsQuery.data?.items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-48 text-center">
-                    <p className="font-semibold">No words in this deck yet.</p>
-                    {query ? (
-                      <p className="text-muted-foreground">Try a different search term.</p>
-                    ) : (
-                      <p className="text-muted-foreground">
-                        Get started by adding your first word.
+                ) : wordsQuery.data?.items.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-48 text-center">
+                      <p className="font-semibold">
+                        No words in this deck yet.
                       </p>
-                    )}
-                    <Link href={`/words/new?deckId=${id}`} className="mt-4 inline-block">
-                      <Button>Add a New Word</Button>
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                wordsQuery.data?.items.map((word) => (
-                  <TableRow
-                    key={word.id}
-                    onClick={() => {
-                      setPendingWordId(word.id);
-                      startNavigation(() => router.push(`/words/${word.id}`));
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <TableCell className="font-medium">
-                      <span className="inline-flex items-center gap-2">
-                        {word.word}
-                        {isNavigating && pendingWordId === word.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                      </span>
+                      {query ? (
+                        <p className="text-muted-foreground">
+                          Try a different search term.
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground">
+                          Get started by adding your first word.
+                        </p>
+                      )}
+                      <Link
+                        href={`/words/new?deckId=${id}`}
+                        className="mt-4 inline-block"
+                      >
+                        <Button>Add a New Word</Button>
+                      </Link>
                     </TableCell>
-                    <TableCell>{word.translation}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{word.partOfSpeech}</Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(word.nextReview)}</TableCell>
                   </TableRow>
-                ))
-              )}
+                ) : (
+                  wordsQuery.data?.items.map((word) => (
+                    <TableRow
+                      key={word.id}
+                      onClick={() => {
+                        setPendingWordId(word.id);
+                        startNavigation(() =>
+                          router.push(`/words/${word.id}`),
+                        );
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <TableCell className="font-medium">
+                        <span className="inline-flex items-center gap-2">
+                          {word.word}
+                          {isNavigating && pendingWordId === word.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : null}
+                        </span>
+                      </TableCell>
+                      <TableCell>{word.translation}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{word.partOfSpeech}</Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(word.nextReview)}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <DropdownMenuItem
+                              onClick={() =>
+                                startNavigation(() =>
+                                  router.push(`/words/${word.id}/edit`),
+                                )
+                              }
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(word)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
 
@@ -244,7 +351,9 @@ export default function DeckDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                    onClick={() =>
+                      setPage((current) => Math.max(1, current - 1))
+                    }
                     disabled={page === 1 || wordsQuery.isLoading}
                   >
                     <ChevronLeft className="mr-1 h-4 w-4" />
@@ -268,8 +377,34 @@ export default function DeckDetailPage() {
         </Card>
       </AnimatedContainer>
       {isNavigating ? (
-        <p className="mt-3 text-xs text-muted-foreground">Opening word details...</p>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Opening word details...
+        </p>
       ) : null}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              word "{selectedWord?.word}" and its associated study progress.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
